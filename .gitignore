@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Excel lock files
+~$*.xlsx
+
+# C#
+bin/
+obj/
+
+# Large simulation outputs
+*.npy
+*.parquet
