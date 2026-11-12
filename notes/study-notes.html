@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>機率工程師轉職筆記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* layout: left index rail + single reading column; each concept is a numbered card keyed to the 20-day plan */
+  --bg: #f4f5f2;
+  --surface: #ffffff;
+  --ink: #1d2523;
+  --muted: #5b6662;
+  --line: #d9ddd8;
+  --accent: #0f6b5c;
+  --accent-soft: #e2f0ec;
+  --warn: #9a4a12;
+  --warn-soft: #fbeee2;
+  --code-bg: #eef1ed;
+  --font-display: "Noto Serif TC", "Songti TC", serif;
+  --font-body: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131917; --surface: #1b2220; --ink: #e3e9e6; --muted: #9aa7a2; --line: #2e3835;
+    --accent: #5cc4ae; --accent-soft: #1c3530; --warn: #f0a46a; --warn-soft: #3a2a1d; --code-bg: #222b28;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131917; --surface: #1b2220; --ink: #e3e9e6; --muted: #9aa7a2; --line: #2e3835;
+  --accent: #5cc4ae; --accent-soft: #1c3530; --warn: #f0a46a; --warn-soft: #3a2a1d; --code-bg: #222b28;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+}
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap {
+  display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px;
+  max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px;
+}
+nav.index { position: sticky; top: 24px; align-self: start; font-size: 14px; }
+nav.index h2 { font-size: 12px; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; font-weight: 500; }
+nav.index ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.index a { display: block; padding: 4px 8px; border-radius: 6px; text-decoration: none; color: var(--ink); }
+nav.index a:hover { background: var(--accent-soft); }
+nav.index .num { color: var(--muted); font-family: var(--font-mono); font-size: 12px; margin-right: 6px; }
+
+main { max-width: 720px; display: grid; gap: 28px; }
+header.top h1 { font-family: var(--font-display); font-size: 32px; line-height: 1.3; margin: 0 0 8px; text-wrap: balance; }
+header.top p { margin: 0; color: var(--muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+
+section.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 24px 28px; scroll-margin-top: 16px;
+}
+section.card > h2 {
+  font-family: var(--font-display); font-size: 22px; margin: 0 0 4px; text-wrap: balance;
+  display: flex; gap: 12px; align-items: baseline;
+}
+section.card > h2 .num { font-family: var(--font-mono); font-size: 14px; color: var(--accent); }
+.src { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+h3 { font-size: 16px; margin: 20px 0 6px; }
+p { margin: 8px 0; }
+ul, ol.steps { margin: 8px 0; padding-left: 22px; }
+
+pre.math {
+  font-family: var(--font-mono); font-size: 14px; line-height: 1.7;
+  background: var(--code-bg); border-radius: 8px; padding: 12px 16px; margin: 12px 0;
+  overflow-x: auto; white-space: pre;
+}
+code { font-family: var(--font-mono); font-size: .92em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+
+.tbl { overflow-x: auto; margin: 12px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { color: var(--muted); font-weight: 500; }
+td.n { text-align: right; font-family: var(--font-mono); }
+tr.total td { font-weight: 700; border-top: 2px solid var(--ink); }
+
+.key { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+.trap { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+.key strong:first-child, .trap strong:first-child { display: block; font-size: 13px; letter-spacing: .04em; }
+.trap strong:first-child { color: var(--warn); }
+.key strong:first-child { color: var(--accent); }
+
+.board { font-family: var(--font-mono); font-size: 14px; background: var(--code-bg); border-radius: 8px; padding: 12px 16px; overflow-x: auto; white-space: pre; margin: 12px 0; }
+
+details.qa { border-top: 1px solid var(--line); padding: 10px 0; }
+details.qa:last-child { border-bottom: 1px solid var(--line); }
+details.qa summary { cursor: pointer; font-weight: 500; }
+details.qa .ans { color: var(--ink); padding: 6px 0 0 4px; }
+.open-q { color: var(--warn); font-size: 13px; font-weight: 500; }
+
+.log li { margin: 4px 0; }
+.log time { font-family: var(--font-mono); font-size: 13px; color: var(--muted); margin-right: 8px; }
+
+@media (max-width: 820px) {
+  .wrap { grid-template-columns: 1fr; gap: 20px; padding: 20px 16px 48px; }
+  nav.index { position: static; }
+  section.card { padding: 20px 18px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="index" aria-label="目錄">
+  <h2>目錄</h2>
+  <ol>
+    <li><a href="#sample-space"><span class="num">01</span>樣本空間與等機率</a></li>
+    <li><a href="#lines"><span class="num">02</span>Lines 組合數</a></li>
+    <li><a href="#ways"><span class="num">03</span>Ways 規則</a></li>
+    <li><a href="#double-counting"><span class="num">04</span>雙重計數</a></li>
+    <li><a href="#expectation"><span class="num">05</span>期望值的意義</a></li>
+    <li><a href="#ways-total"><span class="num">06</span>Ways 路數總和</a></li>
+    <li><a href="#trap-px0"><span class="num">07</span>陷阱：P(X=0)</a></li>
+    <li><a href="#gap-formula"><span class="num">08</span>間隔通式</a></li>
+    <li><a href="#payout"><span class="num">09</span>派彩規則</a></li>
+    <li><a href="#config"><span class="num">10</span>遊戲設定檔</a></li>
+    <li><a href="#interview"><span class="num">11</span>面試問答</a></li>
+    <li><a href="#todo"><span class="num">12</span>待學清單</a></li>
+    <li><a href="#log"><span class="num">13</span>更新紀錄</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="top">
+  <h1>機率工程師轉職筆記</h1>
+  <p>slot-math-portfolio 的觀念整理。每完成一個段落就補上新的一節，複習時先看「重點」和「陷阱」，再自己把面試問答答一遍。</p>
+  <div class="meta">
+    <span class="chip">目前進度：Day 3 第 4 步</span>
+    <span class="chip">最後更新：2026-11-12</span>
+  </div>
+</header>
+
+<!-- 01 -->
+<section class="card" id="sample-space">
+  <h2><span class="num">01</span>樣本空間與等機率</h2>
+  <p class="src">Day 3 · Q1</p>
+  <p>設定：5 軸，第 i 軸的捲軸帶長度為 Lᵢ。一次旋轉的結果是 5 個停止位置 (s₁, s₂, s₃, s₄, s₅)。</p>
+  <pre class="math">總組合數 = L₁ · L₂ · L₃ · L₄ · L₅            ← 乘法原理</pre>
+  <h3>要讓每種組合等機率，需要兩個假設</h3>
+  <ol class="steps">
+    <li><strong>均勻</strong>：同一軸的 Lᵢ 個位置，每個機率都是 1/Lᵢ。</li>
+    <li><strong>獨立</strong>：各軸停在哪裡互不影響。</li>
+  </ol>
+  <pre class="math">P(s₁, s₂, s₃, s₄, s₅)
+  = P(軸1停在s₁) × P(軸2停在s₂) × … × P(軸5停在s₅)   ← 獨立
+  = (1/L₁) × (1/L₂) × (1/L₃) × (1/L₄) × (1/L₅)         ← 均勻
+  = 1 / (L₁·L₂·L₃·L₄·L₅)</pre>
+  <div class="key"><strong>重點</strong>這兩個假設由 RNG 保證：每一轉為每軸各抽一個獨立、均勻落在 0 到 Lᵢ−1 的整數。程式寫成 <code>rng.integers(0, L_i, size=N)</code>。Day 18 會用卡方檢定驗證「均勻」。</div>
+  <div class="trap"><strong>陷阱：隨機不等於等機率</strong>2 軸，L₁ = 3、L₂ = 4。若軸 1 的位置 0 機率是 1/2（其他兩格各 1/4），則 P(軸1停0, 軸2停2) = 1/2 × 1/4 = 1/8，不是 1/12。獨立仍成立，失效的是均勻。這時候不能用「組合數 ÷ 總組合數」算機率，PAR Sheet 數組合數的做法也跟著失效。</div>
+  <p>面試時回答方式：先講出假設的名稱，再說每一步用到哪個假設。</p>
+</section>
+
+<!-- 02 -->
+<section class="card" id="lines">
+  <h2><span class="num">02</span>Lines 組合數：剛好 vs 至少</h2>
+  <p class="src">Day 3 · Q2</p>
+  <p>例：5 軸，每軸 Lᵢ = 10，A 在每軸出現 cᵢ = 2 次。只看一條線，A 從第 1 軸開始連續出現。</p>
+  <p>方法：每一軸各自數「合格的停法」，再相乘。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>軸</th><th>剛好 3 連</th><th>剛好 4 連</th><th>剛好 5 連</th></tr></thead>
+    <tbody>
+      <tr><td>1–3</td><td>是 A：cᵢ</td><td>是 A：cᵢ</td><td>是 A：cᵢ</td></tr>
+      <tr><td>4</td><td>不是 A：L₄ − c₄</td><td>是 A：c₄</td><td>是 A：c₄</td></tr>
+      <tr><td>5</td><td>不限：L₅</td><td>不是 A：L₅ − c₅</td><td>是 A：c₅</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table>
+    <thead><tr><th>獎項</th><th>一般式</th><th>組合數</th><th>機率</th></tr></thead>
+    <tbody>
+      <tr><td>剛好 3 連 A</td><td>c₁c₂c₃(L₄−c₄)L₅</td><td class="n">640</td><td class="n">0.00640</td></tr>
+      <tr><td>剛好 4 連 A</td><td>c₁c₂c₃c₄(L₅−c₅)</td><td class="n">128</td><td class="n">0.00128</td></tr>
+      <tr><td>剛好 5 連 A</td><td>c₁c₂c₃c₄c₅</td><td class="n">32</td><td class="n">0.00032</td></tr>
+      <tr class="total"><td>至少 3 連 A</td><td>c₁c₂c₃L₄L₅</td><td class="n">800</td><td class="n">0.00800</td></tr>
+    </tbody>
+  </table></div>
+  <div class="key"><strong>驗算技巧</strong>分項（剛好 3、4、5 連）加總，必須等於另一種算法（至少 3 連 = 前三軸是 A、後兩軸不限）。對不上就代表某一項算錯。Excel 步驟 4 的驗收就用這招。</div>
+  <div class="trap"><strong>陷阱：剛好 vs 至少</strong>2×2×2×2×10 = 160 是「至少 4 連」（= 128 + 32），把 5 連重複算進去了。「剛好 k 連」的第 k+1 軸一定要是「不是 A」。</div>
+  <div class="trap"><strong>預告 Day 4：加入 Wild 之後</strong>「剛好 3 連 A」的第 4 軸條件變成「既不是 A 也不是 Wild」，否則 Wild 會把連線延長成 4 連。L₄ − c₄ 要改寫。</div>
+</section>
+
+<!-- 03 -->
+<section class="card" id="ways">
+  <h2><span class="num">03</span>Ways 規則：不用連成一線</h2>
+  <p class="src">Day 3 · Q3 延伸</p>
+  <p>Ways 只看「每一軸的視窗裡有沒有該符號」，不管它在哪一列。仍然要從第 1 軸開始、相鄰連續。</p>
+  <div class="board">     軸1  軸2  軸3  軸4  軸5
+列1   A    ·    A    ·    ·
+列2   ·    ·    ·    ·    ·
+列3   A    A    A    ·    ·</div>
+  <ul>
+    <li>Lines（只有中間一條線）：沒中獎。</li>
+    <li>Ways：軸 1 有 2 個 A、軸 2 有 1 個、軸 3 有 2 個、軸 4 沒有 → 3 連 A，共 2 × 1 × 2 = <strong>4 路</strong>，派彩 = 4 × 賠率。</li>
+  </ul>
+  <p>「路」= 從每一軸各挑一個 A 連成一條路徑的挑法數。5×3 盤面每軸可走 3 列，共 3⁵ = 243 條路徑，所以叫 243 Ways。</p>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>Lines</th><th>Ways</th></tr></thead>
+    <tbody>
+      <tr><td>判斷方式</td><td>只看固定幾條線上的符號</td><td>只看每軸視窗有沒有該符號</td></tr>
+      <tr><td>位置</td><td>必須在線上</td><td>任何列都可以</td></tr>
+      <tr><td>同軸多個相同符號</td><td>不影響</td><td>路數相乘</td></tr>
+      <tr><td>5×3 的線數</td><td>自訂（例如 20 線）</td><td>等同 243 條</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 04 -->
+<section class="card" id="double-counting">
+  <h2><span class="num">04</span>雙重計數：每個 A 被看到幾次</h2>
+  <p class="src">Day 3 · Q3</p>
+  <p>問題：第 i 軸長 Lᵢ、A 有 cᵢ 個、視窗 3 列，捲軸帶頭尾相接。把 Lᵢ 個停止位置的「視窗內 A 個數」全部加起來是多少？</p>
+  <p>小例子：捲軸帶 <code>[A, K, A, Q, J]</code>，L = 5、c = 2。打勾表的列是停止位置，欄是每個 A：</p>
+  <div class="tbl"><table>
+    <thead><tr><th>停止位置 s</th><th>視窗內容</th><th>位置 0 的 A</th><th>位置 2 的 A</th><th>列合計</th></tr></thead>
+    <tbody>
+      <tr><td class="n">0</td><td>A, K, A</td><td>✓</td><td>✓</td><td class="n">2</td></tr>
+      <tr><td class="n">1</td><td>K, A, Q</td><td></td><td>✓</td><td class="n">1</td></tr>
+      <tr><td class="n">2</td><td>A, Q, J</td><td></td><td>✓</td><td class="n">1</td></tr>
+      <tr><td class="n">3</td><td>Q, J, A</td><td>✓</td><td></td><td class="n">1</td></tr>
+      <tr><td class="n">4</td><td>J, A, K</td><td>✓</td><td></td><td class="n">1</td></tr>
+      <tr class="total"><td>欄合計</td><td></td><td class="n">3</td><td class="n">3</td><td class="n">6</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>橫著加：2+1+1+1+1，每列不同，看不出規律。</li>
+    <li>直著加：每個 A 都剛好被 3 個視窗看到（視窗有 3 格），所以總和 = 3 × c。</li>
+  </ul>
+  <pre class="math">視窗 3 列：總和 = 3cᵢ
+視窗 4 列：總和 = 4cᵢ
+E[Xᵢ] = 總和 / Lᵢ = 3cᵢ / Lᵢ       ← Xᵢ = 第 i 軸視窗內 A 的個數；用到均勻假設</pre>
+  <div class="key"><strong>重點</strong>雙重計數：同一張表，橫著加和直著加一定相等，挑好算的方向。頭尾相接保證沒有 A 因為在邊緣而少算。</div>
+</section>
+
+<!-- 05 -->
+<section class="card" id="expectation">
+  <h2><span class="num">05</span>期望值：平均值，什麼時候等於機率</h2>
+  <p class="src">Day 3 · Q3 延伸</p>
+  <p>期望值永遠是「平均值」。只有當隨機變數只會是 0 或 1 時，平均值剛好等於機率。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>隨機變數</th><th>可能的值</th><th>期望值的意義</th></tr></thead>
+    <tbody>
+      <tr><td>Xᵢ（視窗內 A 的個數）</td><td>0, 1, 2, 3</td><td>平均每個視窗有幾個 A</td></tr>
+      <tr><td>1{X₄ = 0}（指示函數）</td><td>0 或 1</td><td>機率 P(X₄ = 0)</td></tr>
+    </tbody>
+  </table></div>
+  <pre class="math">E[1{X₄=0}] = 0 × P(X₄≠0) + 1 × P(X₄=0) = P(X₄=0)</pre>
+  <h3>總和 = 總組合數 × 期望值</h3>
+  <pre class="math">E[路數] = Σ (每種組合的路數 × 1/總組合數)     ← 均勻：每種組合機率相同
+        = (Σ 每種組合的路數) / 總組合數        ← 常數提到 Σ 外面
+        = 總和 / 總組合數
+⇒ 總和 = 總組合數 × E[路數]</pre>
+  <p>白話：平均值 = 總和 ÷ 個數。</p>
+</section>
+
+<!-- 06 -->
+<section class="card" id="ways-total">
+  <h2><span class="num">06</span>Ways：剛好 3 連 A 的路數總和</h2>
+  <p class="src">Day 3 · Q3 延伸</p>
+  <pre class="math">一盤的路數 = X₁ · X₂ · X₃ · 1{X₄=0}
+
+總和 = 總組合數 × E[X₁·X₂·X₃·1{X₄=0}]
+     = (L₁L₂L₃L₄L₅) × E[X₁]·E[X₂]·E[X₃]·P(X₄=0)          ← 獨立：乘積的期望 = 期望的乘積
+     = (L₁L₂L₃L₄L₅) × (3c₁/L₁)·(3c₂/L₂)·(3c₃/L₃)·(N₄/L₄)
+     = 3c₁ · 3c₂ · 3c₃ · N₄ · L₅                           ← L₁~L₄ 約掉</pre>
+  <p>N₄ = 第 4 軸「視窗裡沒有 A」的停止位置個數。第 5 軸不限，所以留下 L₅。</p>
+  <div class="key"><strong>和 RTP 的關係</strong>E[X₁X₂X₃·1{X₄=0}] = 平均每轉中幾路「剛好 3 連 A」。乘上 3 連 A 的賠率，就是這個獎項對 RTP 的貢獻。Day 4 把每個獎項的貢獻加總就是主遊戲 RTP。</div>
+</section>
+
+<!-- 07 -->
+<section class="card" id="trap-px0">
+  <h2><span class="num">07</span>陷阱：P(X = 0) ≠ 1 − 3c/L</h2>
+  <p class="src">Day 3 · Q3 延伸</p>
+  <p>用 <code>[A, K, A, Q, J]</code>（L = 5、c = 2）代入：</p>
+  <pre class="math">1 − 3c/L = 1 − 6/5 = −0.2          ← 負的機率，不可能
+實際：每個視窗都至少有 1 個 A ⇒ N = 0，P(X=0) = 0</pre>
+  <h3>錯在哪：把平均個數當成機率</h3>
+  <pre class="math">E[X]     = 1×P(X=1) + 2×P(X=2) + 3×P(X=3)
+P(X ≥ 1) = 1×P(X=1) + 1×P(X=2) + 1×P(X=3)
+
+例：E[X] = 6/5 = 1.2   ← s=0 的視窗有 2 個 A，算了 2 次
+    P(X≥1) = 5/5 = 1
+
+一般：E[X] ≥ P(X ≥ 1)，只有沒有任何視窗含 2 個以上 A 時才相等</pre>
+  <div class="trap"><strong>結論</strong>N 不能只用個數 c 算，取決於 A 在捲軸帶上的排列。Excel 做法：每個停止位置用 3 格 COUNTIF 算視窗內 A 個數，再 COUNTIF 數「= 0」的列數。所以 Ways 的 PAR Sheet 一定要有完整的捲軸帶排列。</div>
+</section>
+
+<!-- 08 -->
+<section class="card" id="gap-formula">
+  <h2><span class="num">08</span>間隔通式：N 怎麼算，捷徑何時成立</h2>
+  <p class="src">Day 3 · Q3 延伸，對照 ezslotdesign slotmath4 的堆疊例</p>
+  <p>P(X = 0) = 這一軸停下來後，視窗裡完全看不到 A 的機率 = N / L。在 Ways「剛好 3 連」中，第 4 軸就是用這一項表示「斷掉」，角色和 Lines 的 (L₄ − c₄)/L₄ 相同。</p>
+  <p>把捲軸帶看成圓圈，相鄰兩個 A 之間夾的非 A 格數叫<strong>間隔 g</strong>，c 個 A 有 c 個間隔。看不到 A 的視窗 = 連續 3 格都不是 A，一定完整落在某個間隔裡；長度 g 的間隔放得下 g − 2 個這種視窗。</p>
+  <pre class="math">N = Σ max(0, gⱼ − 2)               ← 對每個間隔 j 加總（視窗 r 列時是 gⱼ − (r−1)）
+
+例 1：[A, K, A, Q, J]，間隔 1 和 2
+      N = max(0,−1) + max(0,0) = 0                         ✓
+例 2：長度 10，2 個 Q 堆疊在 0、1，間隔 0 和 8
+      N = 0 + 6 = 6，P(X=0) = 0.6                           ✓
+      捷徑 10 − 2×3 = 4 是錯的（重疊的視窗被扣了兩次）</pre>
+  <h3>捷徑 L − 3c 什麼時候正確</h3>
+  <pre class="math">L = c + Σ gⱼ
+L − 3c = Σ (gⱼ − 2)               ← c 個間隔各分到一個 −2
+真正的 N = Σ max(0, gⱼ − 2)
+gⱼ ≥ 2 時兩者逐項相等；gⱼ &lt; 2 時捷徑那一項是負的，會少算</pre>
+  <div class="key"><strong>結論</strong>捷徑正確 ⇔ 每個間隔 g ≥ 列數 − 1，也就是任兩個 A 的距離 ≥ 列數。距離剛好等於列數就夠了，不用「超過」。</div>
+  <div class="key"><strong>實作</strong>不需要迴圈。Excel 逐列 COUNTIF 往下拉；Python 用 NumPy 把捲軸帶頭尾接起來，一次算出所有視窗（向量化，Day 7）。</div>
+  <div class="key"><strong>對 RTP 的影響</strong>E[Xᵢ] = 3cᵢ/Lᵢ 只看個數；P(Xᵢ = 0) = Nᵢ/Lᵢ 看排列。「剛好 k 連」需要第 k+1 軸斷掉，所以個數相同、排列不同的兩款遊戲，RTP 可以不同。堆疊會讓「看不到」的機率變高，但一看到就是多個，路數一次乘很大：中獎變少、單次變大，波動度上升（Day 6 驗證）。</div>
+</section>
+
+<!-- 09 -->
+<section class="card" id="payout">
+  <h2><span class="num">09</span>派彩規則：Lines 和 Ways 怎麼結算</h2>
+  <p class="src">Day 3 第 2 步，對照 ezslotdesign slotmath4</p>
+  <div class="tbl"><table>
+    <thead><tr><th></th><th>Lines</th><th>Ways</th></tr></thead>
+    <tbody>
+      <tr><td>結算單位</td><td>每條線各自結算，再加總</td><td>每個符號結算一次，所有路合併</td></tr>
+      <tr><td>同一線／路上</td><td>只算最長</td><td>只算最長</td></tr>
+      <tr><td>同一盤</td><td>不同線可各自派彩（可同時中 3 連和 2 連）</td><td>同一符號只有一個結果：最長連數 × 路數</td></tr>
+      <tr><td>起點</td><td colspan="2">都必須從第 1 軸開始、相鄰連續</td></tr>
+    </tbody>
+  </table></div>
+  <p>練習盤面（賠率 A：2 連 2、3 連 10、4 連 50；Lines 只有 3 條水平線）：</p>
+  <div class="board">     軸1  軸2  軸3  軸4  軸5
+列1   A    A    K    Q    J
+列2   K    A    A    J    Q
+列3   Q    J    A    K    A</div>
+  <pre class="math">Lines：列1 A A → 2 連 = 2；列2 第1軸是 K → 0（中間的 A A 不算）；列3 → 0；合計 2
+Ways ：A 個數 1, 2, 2, 0 → 3 連，1×2×2 = 4 路，派彩 4 × 10 = 40</pre>
+  <div class="key"><strong>為什麼只算最長</strong>2 連是 3 連的前半段，兩個都派等於同一條路付兩次錢。更重要的是：「剛好 3/4/5 連」必須互斥，RTP 才能把各獎項直接加總。</div>
+  <div class="trap"><strong>陷阱</strong>Lines 贏 2、Ways 贏 40 不能直接比，兩者押注不同。比較 RTP 前要先除以每轉押注。</div>
+  <div class="key"><strong>決定（2026-11-12）</strong>作品集遊戲採用 5×3、243 Ways。理由：沿用 Xᵢ、N 與間隔通式；面試展示度較高；Python 逐軸數符號再相乘，向量化自然。</div>
+</section>
+
+<!-- 10 -->
+<section class="card" id="config">
+  <h2><span class="num">10</span>遊戲設定檔 config/game.json</h2>
+  <p class="src">Day 3 第 3 步</p>
+  <p>Excel（PAR Sheet）、Python（模擬）、C#（結算引擎）都讀同一份設定。只有一份資料來源，理論值和模擬值對不上時，就一定是邏輯錯誤，不是設定不一致。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>欄位</th><th>內容</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>轉起來!</td><td>報表標題</td></tr>
+      <tr><td><code>layout</code></td><td>5 軸 × 3 列</td><td>視窗取幾格</td></tr>
+      <tr><td><code>bet</code></td><td>50 點</td><td>RTP = E[派彩] / bet</td></tr>
+      <tr><td><code>symbols</code></td><td>H1 H2 H3（high）、A K Q J T（low）</td><td>符號清單、排序</td></tr>
+      <tr><td><code>paytable</code></td><td>每符號 3/4/5 連，點數／每路</td><td>派彩 = 賠率 × 路數</td></tr>
+      <tr><td><code>reels</code></td><td>5 條 × 30 格</td><td>cᵢ、N、Xᵢ；模擬取視窗</td></tr>
+    </tbody>
+  </table></div>
+  <h3>物件還是陣列</h3>
+  <p>用名字查 → 物件 <code>{}</code>（C# 的 Dictionary／class）；用位置查或順序有意義 → 陣列 <code>[]</code>（C# 的 List）。</p>
+  <ul>
+    <li><code>layout</code> 物件：兩個數字意義不同，<code>[5, 3]</code> 看不出哪個是軸。</li>
+    <li><code>reels</code> 陣列中的陣列：軸的順序有意義（從第 1 軸連）；位置就是停止位置，順序一換 N 和 RTP 就變。</li>
+    <li><code>paytable</code> 物件中的物件：<code>paytable["H1"]["5"]</code>。JSON 物件的鍵只能是字串，所以寫 <code>"3"</code>。</li>
+  </ul>
+  <h3>為什麼押注 50、賠率用點數</h3>
+  <pre class="math">小獎約是押注的 0.1 倍，「倍數」無法用整數記錄
+押注 = 50 點，賠率 = 每路幾點（整數）
+一盤派彩 = Σ 各符號（賠率 × 路數）      ← 全是整數乘加，沒有浮點誤差
+RTP = E[一盤派彩] / 50</pre>
+  <div class="trap"><strong>陷阱：驗收能過不代表正確</strong>symbols 寫成兩個 J、漏了 T，但「有 8 個符號」的檢查仍然通過。要加上一致性檢查：symbols 的 id = paytable 的鍵 ⊇ 捲軸上出現的符號。這類檢查之後放進 pytest 和 CI。</div>
+  <p>捲軸帶第一版：每軸 H1 2、H2 3、H3 3、A K Q 各 4、J T 各 5，同符號間距 ≥ 3（L − 3c 捷徑成立，Excel 可交叉驗算）。</p>
+</section>
+
+<!-- 11 -->
+<section class="card" id="interview">
+  <h2><span class="num">11</span>面試問答</h2>
+  <p class="src">先自己口頭答一遍，再展開看重點</p>
+  <details class="qa">
+    <summary>老虎機每種停輪組合為什麼等機率？由誰保證？</summary>
+    <div class="ans">需要「各軸位置均勻」和「各軸獨立」兩個假設，由 RNG 保證：每軸獨立抽一個 0 到 Lᵢ−1 的均勻整數。機率 = 1/(L₁L₂L₃L₄L₅)。可用卡方檢定驗證均勻性。</div>
+  </details>
+  <details class="qa">
+    <summary>Lines 遊戲「剛好 3 連」和「至少 3 連」的組合數怎麼算？怎麼驗算？</summary>
+    <div class="ans">剛好 3 連：c₁c₂c₃(L₄−c₄)L₅。至少 3 連：c₁c₂c₃L₄L₅。驗算：剛好 3、4、5 連加總 = 至少 3 連。</div>
+  </details>
+  <details class="qa">
+    <summary>Lines 和 Ways 差在哪？243 Ways 的 243 怎麼來？</summary>
+    <div class="ans">Lines 只看固定線上的符號；Ways 只看每軸視窗有沒有該符號，同軸多個要路數相乘。5×3 每軸 3 列，3⁵ = 243。</div>
+  </details>
+  <details class="qa">
+    <summary>為什麼 P(視窗沒有 A) 不能寫成 1 − 3c/L？</summary>
+    <div class="ans">3c/L 是視窗內 A 的平均個數 E[X]，不是 P(X ≥ 1)。一個視窗有 2 個 A 時，E[X] 會算 2 次。反例 [A,K,A,Q,J] 會算出 −0.2。</div>
+  </details>
+  <details class="qa">
+    <summary>在什麼條件下，1 − 3c/L 會剛好等於 P(X = 0)？用 A 在捲軸帶上的間距描述。</summary>
+    <div class="ans">任兩個 A 的距離 ≥ 列數（間隔 g ≥ 列數 − 1），這時沒有視窗能同時看到兩個 A。證明：L − 3c = Σ(gⱼ − 2)，真正的 N = Σ max(0, gⱼ − 2)，所有 gⱼ ≥ 2 時逐項相等。</div>
+  </details>
+  <details class="qa">
+    <summary>長度 10 的捲軸帶有 2 個 Q 堆疊，視窗 3 列。看不到 Q 的停止位置有幾個？為什麼不是 10 − 2×3？</summary>
+    <div class="ans">6 個。間隔是 0 和 8，N = 0 + (8 − 2) = 6。10 − 6 = 4 是錯的，因為同時看到兩個 Q 的視窗被扣了兩次。</div>
+  </details>
+  <details class="qa">
+    <summary>兩款 Ways 遊戲捲軸帶長度、每軸 A 的個數都相同，為什麼 RTP 可能不同？</summary>
+    <div class="ans">A 的排列間隔不同 → N 不同 → P(X = 0) 不同。E[X] = 3c/L 只看個數，但「剛好 k 連」需要第 k+1 軸斷掉，用的是 P(X = 0)，所以各獎項機率和 RTP 都會不同。</div>
+  </details>
+  <details class="qa">
+    <summary>Ways 盤面上 A 形成 3 連時，前兩軸的 2 連為什麼不另外派彩？</summary>
+    <div class="ans">2 連是同一條路的前半段，兩個都派等於重複付錢；而且「剛好 k 連」必須互斥，RTP 才能直接加總各獎項。Lines 也一樣：同一條線只算最長，只是不同線可以各自派彩。</div>
+  </details>
+</section>
+
+<!-- 12 -->
+<section class="card" id="todo">
+  <h2><span class="num">12</span>待學：參考資料裡還沒學到的</h2>
+  <p class="src">對照 ezslotdesign.com/slotmath4/</p>
+  <ul>
+    <li><strong>Wild 替代公式</strong>：4 連 K = WK·WK·WK·WK·X_WK，WK = K 或 Wild，X_WK = 既不是 K 也不是 Wild。（Day 4）</li>
+    <li><strong>期望值要除以押注</strong>：Lines 以每線押 1 為單位；Ways 以每轉為單位，要除以每轉押注才是 RTP。（Day 4）</li>
+  </ul>
+</section>
+
+<!-- 13 -->
+<section class="card" id="log">
+  <h2><span class="num">13</span>更新紀錄</h2>
+  <ul class="log">
+    <li><time datetime="2026-11-12">2026-11-12</time>新增第 10 節遊戲設定檔（欄位用途、物件 vs 陣列、押注 50 與整數賠率、一致性檢查陷阱）。</li>
+    <li><time datetime="2026-11-12">2026-11-12</time>新增第 09 節派彩規則（Lines vs Ways、練習盤面、只算最長的理由）與遊戲型式決定；第 08 節補「排列對 RTP 的影響」；面試問答新增 2 題。</li>
+    <li><time datetime="2026-11-12">2026-11-12</time>新增第 08 節間隔通式（含堆疊例與捷徑成立條件的證明）、兩題面試問答、第 10 節待學清單（對照 slotmath4）。</li>
+    <li><time datetime="2026-11-12">2026-11-12</time>建立筆記。Day 3 第 1 步：樣本空間、Lines 組合數、Ways、雙重計數、期望值、P(X=0) 陷阱。</li>
+  </ul>
+</section>
+</main>
+</div>
+</body>
+</html>
