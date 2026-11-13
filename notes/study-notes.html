@@ -132,9 +132,10 @@ details.qa .ans { color: var(--ink); padding: 6px 0 0 4px; }
     <li><a href="#gap-formula"><span class="num">08</span>間隔通式</a></li>
     <li><a href="#payout"><span class="num">09</span>派彩規則</a></li>
     <li><a href="#config"><span class="num">10</span>遊戲設定檔</a></li>
-    <li><a href="#interview"><span class="num">11</span>面試問答</a></li>
-    <li><a href="#todo"><span class="num">12</span>待學清單</a></li>
-    <li><a href="#log"><span class="num">13</span>更新紀錄</a></li>
+    <li><a href="#excel"><span class="num">11</span>Excel 匯入與計數</a></li>
+    <li><a href="#interview"><span class="num">15</span>面試問答</a></li>
+    <li><a href="#todo"><span class="num">16</span>待學清單</a></li>
+    <li><a href="#log"><span class="num">17</span>更新紀錄</a></li>
   </ol>
 </nav>
 
@@ -143,8 +144,8 @@ details.qa .ans { color: var(--ink); padding: 6px 0 0 4px; }
   <h1>機率工程師轉職筆記</h1>
   <p>slot-math-portfolio 的觀念整理。每完成一個段落就補上新的一節，複習時先看「重點」和「陷阱」，再自己把面試問答答一遍。</p>
   <div class="meta">
-    <span class="chip">目前進度：Day 3 第 4 步</span>
-    <span class="chip">最後更新：2026-11-12</span>
+    <span class="chip">目前進度：Day 4 第 1 步（Ways 路數）</span>
+    <span class="chip">最後更新：2026-11-13</span>
   </div>
 </header>
 
@@ -382,8 +383,152 @@ RTP = E[一盤派彩] / 50</pre>
 </section>
 
 <!-- 11 -->
+<section class="card" id="excel">
+  <h2><span class="num">11</span>Excel PAR Sheet：匯入與計數</h2>
+  <p class="src">Day 3 第 4 步（4-1、4-2）· excel/par_sheet_v1.xlsx</p>
+  <h3>Power Query：Excel 直接讀 config</h3>
+  <p>Excel 內建的資料匯入工具，存的是「去哪裡讀、怎麼整理」的步驟，不是資料本身。改了 game.json 之後按「資料 → 全部重新整理」就同步。開啟：資料 → 取得資料 → 從其他來源 → 空白查詢 → 進階編輯器。</p>
+  <pre class="math">let
+    Source  = Json.Document(File.Contents("...\config\game.json")),   ← json.load
+    Reels   = Source[reels],                                           ← g["reels"]
+    Tbl     = Table.FromColumns(Reels, {"Reel1",...,"Reel5"}),         ← 每軸一欄
+    WithPos = Table.AddIndexColumn(Tbl, "Pos", 0, 1, Int64.Type),      ← 停止位置 0~29
+    Result  = Table.ReorderColumns(WithPos, {"Pos","Reel1",...})
+in
+    Result</pre>
+  <h3>Counts 表：各軸符號個數 cᵢ</h3>
+  <pre class="math">B2 = COUNTIF(Reels[Reel1], $A2)      ← 往右拉 Reel1→Reel2…；往下拉 $A2→$A3…
+B10 = SUM(B2:B9)                      ← 每軸合計必須是 30</pre>
+  <div class="tbl"><table>
+    <thead><tr><th>寫法</th><th>往右拉</th><th>往下拉</th></tr></thead>
+    <tbody>
+      <tr><td><code>A2</code></td><td>變 B2 ✗</td><td>A3 ✓</td></tr>
+      <tr><td><code>$A2</code></td><td>$A2 ✓</td><td>$A3 ✓</td></tr>
+      <tr><td><code>A$2</code></td><td>B$2 ✗</td><td>A$2 ✗</td></tr>
+      <tr><td><code>$A$2</code></td><td>$A$2</td><td>$A$2 ✗</td></tr>
+    </tbody>
+  </table></div>
+  <p><code>$</code> 鎖住它後面那一部分。符號名稱都在 A 欄（鎖欄），但要跟著列走（不鎖列）。</p>
+  <div class="trap"><strong>陷阱：符號名稱 H1 是儲存格位址</strong>公式寫 <code>COUNTIF(..., H1)</code> 會被讀成 H 欄第 1 列（空白），結果是 0。要參照寫著符號名稱的儲存格，或加雙引號。</div>
+  <div class="trap"><strong>陷阱：差一列也會「看起來對」</strong>B 欄公式指到 $A1，整欄錯一列；H3、K、Q、T 的數字剛好和上一個符號相同，看起來正確。是 Total = 30 的檢查列抓到的。合計列就是 PAR Sheet 的自我驗算。</div>
+  <div class="key"><strong>驗收方式</strong>用 Python（openpyxl）讀 xlsx，逐格和 game.json 比對：Reels 5 軸 × 30 格順序一致；Counts 每格 = JSON 的計數、合計 30。Excel 編輯中（還在輸入儲存格）按 Ctrl+S 不會存檔，先按 Enter 或 Esc。</div>
+</section>
+
+<!-- 12 -->
+<section class="card" id="window">
+  <h2><span class="num">12</span>Window 表：環狀視窗與逐格驗算</h2>
+  <p class="src">Day 3 第 4 步（4-3）· excel/par_sheet_v1.xlsx 的 Window1–Window5</p>
+  <h3>MOD：取餘數，處理頭尾相接</h3>
+  <p>捲軸是一個圈，像時鐘：11 點再過 3 小時是 2 點，不是 14 點。MOD(x, L) 是 x 除以 L 的餘數，結果永遠在 0 到 L−1。</p>
+  <pre class="math">MOD(7, 3) = 1     MOD(9, 3) = 0     MOD(2, 3) = 2
+
+位置編號 1~L，停在 p，往下第 k 格：
+  MOD(p − 1 + k, L) + 1      ← 先減 1、取餘數、再加 1
+
+第 1 列 = p
+第 2 列 = MOD(p, L) + 1
+第 3 列 = MOD(p + 1, L) + 1
+
+驗算（L = 30）：p = 29 → 29, 30, 1    p = 30 → 30, 1, 2</pre>
+  <div class="trap"><strong>陷阱：MOD(30, 30) = 0，捲軸沒有第 0 格</strong>直接寫 MOD(p + 1, 30) 時，p = 29 會得到 0。MOD 的範圍是 0~29，編號卻是 1~30，差 1 要先減後加。Python 的索引從 0 開始，直接寫 (p + k) % L 即可。</div>
+  <h3>Window 表的欄位</h3>
+  <pre class="math">A      Pos 1~30
+B–D    Row1–3 位置編號    =A2、=MOD(A2, $G$2) + 1、=MOD(A2+1, $G$2) + 1
+G2     L                  =COUNTA(Reels[Reel1])          ← 不寫死 30
+I–K    Sym1–3 符號        =INDEX(Reels[Reel1], B2)       ← 第幾個 → 符號
+M–T    8 符號個數         =COUNTIF($I2:$K2, M$1)         ← 鎖欄範圍、鎖列表頭
+第 33 列  Sum             =SUM(M2:M31)                   ← 應 = 3c
+第 34 列  N               =COUNTIF(M2:M31, 0)            ← 應 = L − 3c（間距 ≥ 3 時）</pre>
+  <p>INDEX(一排資料, 第幾個) 像打開第幾號置物櫃。COUNTA 數非空白格數，讓捲軸長度從設定來，規格改成 32 格時公式一格都不用改。Reel 2–5 用「移動或複製 → 建立複本」，再用 Ctrl+H 把 Reel1 換成 Reel2…（搜尋範圍選「工作表」，查詢選「公式」），每張應取代 91 筆 = 90 格 INDEX + 1 格 COUNTA。</p>
+  <div class="trap"><strong>陷阱：看 Excel 列號找位置，差一格</strong>表頭佔第 1 列，所以列號 = Pos + 1。INDEX 數的是資料第幾個，要看 Pos 欄。這種錯叫 off-by-one（差一錯誤）。</div>
+  <div class="trap"><strong>陷阱：表格參照往右拖會換軸</strong>Reels[Reel1] 往右拖，Excel 自動變成 Reel2、Reel3。不會報錯、每格都是正常符號，只有逐格比對 JSON 才抓得到。</div>
+  <div class="trap"><strong>陷阱：看不見的空格</strong>表頭打成「 Q」（前面有空格），COUNTIF 一個都數不到。</div>
+  <div class="trap"><strong>陷阱：各軸組成相同，Sum／N 驗不出換軸</strong>5 軸每個符號個數都一樣，所以 Sum、N 都相同。要看特定位置的符號（如 Pos 5、Pos 30）才分得出是哪一軸。</div>
+  <div class="key"><strong>結果</strong>5 軸 × 8 符號全部符合 Sum = 3c、N = L − 3c；openpyxl 逐格比對 game.json 通過（位置公式、INDEX、COUNTIF、摘要列）。Sum 永遠等於 3c；N = L − 3c 只在同符號間距 ≥ 列數時成立，所以逐格數才是基準，捷徑是交叉驗算。</div>
+</section>
+
+<!-- 13 -->
+<section class="card" id="rtp">
+  <h2><span class="num">13</span>RTP：定義與推導</h2>
+  <p class="src">Day 4 第 1 步</p>
+  <h3>名詞</h3>
+  <ul>
+    <li><strong>軸（reel，捲軸）</strong>：畫面上直的一條，會轉動、停下。5×3 = 5 軸，每軸露出 3 列。</li>
+    <li><strong>捲軸帶（reel strip）</strong>：每軸背後一條依序印著符號、頭尾相接的帶子；本遊戲每條 30 格（game.json 的 reels、Excel 的 Reels 表）。</li>
+    <li><strong>停止位置</strong>：一軸停在捲軸帶的第幾格，每軸 30 種；玩家看到從這格往下 3 格（視窗，見第 12 節）。</li>
+    <li><strong>RTP（Return to Player，返還率）</strong>：玩家每押 1 元，平均拿回多少。RTP 96% = 押 100 平均拿回 96。</li>
+    <li><strong>莊家優勢（house edge）</strong>= 1 − RTP。</li>
+    <li><strong>停輪組合</strong>：5 軸各停在哪一格的一種情況。總數 T = L₁L₂L₃L₄L₅ = 30⁵ = 24,300,000。</li>
+    <li><strong>W</strong>：一轉的派彩，是隨機變數。</li>
+  </ul>
+  <h3>推導</h3>
+  <pre class="math">1. 所有結果：T = 30⁵ 種停輪組合
+2. 各軸均勻 + 獨立（RNG 保證）→ 每種組合機率 = 1/T
+3. 期望值定義：E[W] = Σ w(組合) × (1/T)
+                    = (1/T) × Σ w(組合)      ← 機率相同，提出來
+                    = 總派彩 ÷ T
+4. 除以押注：RTP = E[W] ÷ bet = 總派彩 ÷ (T × bet)
+
+直覺：每種組合各轉一次，總押注 T × bet、總派彩 Σw，相除即 RTP。</pre>
+  <h3>小例子</h3>
+  <pre class="math">1 軸 4 格，押注 50，只有第 4 格派 100：
+  w = 0, 0, 0, 100
+  公式：  100 ÷ (4 × 50) = 0.5
+  期望值：E[W] = 100 × 1/4 = 25，25 ÷ 50 = 0.5   ✓</pre>
+  <h3>和 Ways 路數的關係</h3>
+  <pre class="math">Ways 每一路付一次錢：
+  總派彩 = Σ（各獎項總路數 × 每路賠率）
+  RTP    = 總派彩 ÷ (30⁵ × 50)</pre>
+  <div class="trap"><strong>陷阱：總派彩是錢的加總，不是中獎盤面數</strong>總派彩 = 每種組合的派彩金額全部相加（沒中獎的是 0）。例：w = 0, 30, 0, 100 → 總派彩 130 點；中獎盤面 2 個。「中獎盤面數 ÷ 總組合數」是<strong>命中頻率（hit frequency）</strong>，這例是 2/4 = 50%。RTP 衡量平均拿回多少，命中頻率衡量多常中，兩者不同。</div>
+  <div class="trap"><strong>前提：等機率</strong>直接除以 T 只在每種組合機率相同時成立。RNG 不均勻就要用各自的機率加權（Day 18 卡方檢定驗證均勻性）。</div>
+  <div class="key"><strong>RTP 是長期平均</strong>大數法則保證轉得夠多時，實際返還率接近 RTP；短期偏離多少由波動度決定（Day 6）。</div>
+</section>
+
+<!-- 14 -->
+<section class="card" id="ways-count">
+  <h2><span class="num">14</span>Ways 總路數：從一個盤面到全部盤面</h2>
+  <p class="src">Day 4 第 1 步</p>
+  <h3>乘法原理</h3>
+  <p>分步驟做選擇、每一步的選法互不影響時，總數 = 各步選法數相乘。Ways 的一路 = 從軸 1 開始每軸視窗挑一個該符號。</p>
+  <pre class="math">軸1 有 2 個 H1、軸2 有 2 個、軸3 有 1 個、軸4 沒有
+剛好 3 連 H1 = 2 × 2 × 1 = 4 路</pre>
+  <h3>全部盤面的總路數</h3>
+  <pre class="math">一個盤面：路數 = x₁ × x₂ × x₃ × [x₄ = 0] × 1     （xᵢ = 第 i 軸視窗裡的個數）
+
+全部 30⁵ 盤面加總，各軸獨立 → 五層加總可拆開：
+  Σ(x₁ x₂ x₃ [x₄=0] · 1) = Sum₁ × Sum₂ × Sum₃ × N₄ × L₅
+
+Sumᵢ = 第 i 軸 30 個停止位置的視窗個數加總（= 3cᵢ）
+N₄   = 第 4 軸看不到該符號的停止位置數
+L₅   = 第 5 軸停止位置總數（停哪都行）
+
+H1：6 × 6 × 6 × 24 × 30 = 155,520 路
+派彩：155,520 × 50 = 7,776,000 點</pre>
+  <p>拆開的道理和 (a+b)(c+d) = ac + ad + bc + bd 相同：先乘再加 = 先加再乘。</p>
+  <div class="trap"><strong>陷阱：最後一軸用 L，不是 Sum</strong>剛好 3 連只要求軸 4 斷掉，軸 5 停哪都算 1 次，所以乘 L₅ = 30。用 Sum 會變成「軸 5 也要有 H1」。</div>
+  <h3>Excel：Ways 表與賠率表</h3>
+  <pre class="math">Ways 表：符號放欄（B–I = H1…T），往右拖自動對到下一個符號
+  Sum1–5  =Window1!M33 … =Window5!M33     ← 跨工作表參照：工作表名!儲存格
+  N4      =Window4!M34
+  N5      =Window5!M34
+  L5      =Window5!$G$2                    ← 只有一格，鎖住
+  Ways3   =B2*B3*B4*B7*B9
+  Ways4   =B2*B3*B4*B5*B8
+  Ways5   =B2*B3*B4*B5*B6
+
+Paytable 查詢（Power Query，讀 game.json 的 paytable）：
+  Pay      = Source[paytable],
+  Tbl      = Record.ToTable(Pay),                      ← 物件 → Name / Value 兩欄
+  Expanded = Table.ExpandRecordColumn(Tbl, "Value", {"3","4","5"}, {"Pay3","Pay4","Pay5"}),
+  Result   = Table.RenameColumns(Expanded, {{"Name","Symbol"}})</pre>
+  <div class="trap"><strong>陷阱：名稱 L5 是儲存格位址</strong>公式寫 <code>=B2*B3*B4*B7*L5</code>，L5 被讀成 L 欄第 5 列（空白 = 0），結果是 0。要寫存放該值的格子 B9。和 Counts 表的 H1 是同一個陷阱。</div>
+  <div class="trap"><strong>陷阱：在既有查詢裡貼新程式碼 = 改掉它</strong>打開 Reels 查詢的進階編輯器後貼上 Paytable 程式碼，Reels 表就被換成賠率表。所有 Reels[...] 公式被 Excel 永久改成 <code>#REF!</code>（參照錯誤：讀的東西不見了），最後一欄還被改指到 Paytable[Symbol]。新增查詢一律從「取得資料 → 空白查詢」開始。修復：重建 Reels 查詢，再用 Ctrl+H 把 <code>#REF!</code> 換回 <code>Reels[ReelN]</code>。教訓：xlsx 也要 commit 進 git 才有備份。</div>
+  <div class="key"><strong>總派彩</strong>= Σ（各獎項總路數 × 每路賠率），再代入 RTP = 總派彩 ÷ (30⁵ × 50)。</div>
+</section>
+
+<!-- 15 -->
 <section class="card" id="interview">
-  <h2><span class="num">11</span>面試問答</h2>
+  <h2><span class="num">15</span>面試問答</h2>
   <p class="src">先自己口頭答一遍，再展開看重點</p>
   <details class="qa">
     <summary>老虎機每種停輪組合為什麼等機率？由誰保證？</summary>
@@ -417,11 +562,39 @@ RTP = E[一盤派彩] / 50</pre>
     <summary>Ways 盤面上 A 形成 3 連時，前兩軸的 2 連為什麼不另外派彩？</summary>
     <div class="ans">2 連是同一條路的前半段，兩個都派等於重複付錢；而且「剛好 k 連」必須互斥，RTP 才能直接加總各獎項。Lines 也一樣：同一條線只算最長，只是不同線可以各自派彩。</div>
   </details>
+  <details class="qa">
+    <summary>為什麼 Excel、Python、C# 要讀同一份設定檔？</summary>
+    <div class="ans">理論和模擬對不上時，可能是 (a) 設定不一致、(b) 結算邏輯寫錯、(c) 統計誤差。單一設定檔排除 (a)，直接鎖定 (b) 或 (c)。注意：它抓不到「遊戲設計不好」，因為兩邊會一致地算出同樣的數字。</div>
+  </details>
+  <details class="qa">
+    <summary>押注為什麼設 50 點而不是 1？</summary>
+    <div class="ans">讓押注零頭的小獎（0.1 倍）也能用整數表示。結算和大量模擬全程整數累加，避免浮點誤差，最後才除以 50 得到 RTP。附帶效果：押 1 又要整數賠率的話，最小獎至少 1 倍押注，243 Ways 的 RTP 會遠超過 100%。</div>
+  </details>
+  <details class="qa">
+    <summary>Excel 和 Python 怎麼保證用的是同一份設定？</summary>
+    <div class="ans">Excel 用 Power Query 直接讀 config/game.json，存的是讀取步驟不是資料；改設定後重新整理就同步。Python 用 json.load 讀同一個檔案。</div>
+  </details>
+  <details class="qa">
+    <summary>你怎麼確認 PAR Sheet 的計數沒有算錯？</summary>
+    <div class="ans">兩層：表內自我驗算（每軸合計 = 30；剛好 3/4/5 連加總 = 至少 3 連；逐列數的 N = 間距 ≥ 3 時的 L − 3c 捷徑），以及用 Python 讀 xlsx 和 game.json 逐格比對。曾抓到公式錯一列、但部分數字巧合正確的 bug。</div>
+  </details>
+  <details class="qa">
+    <summary>RTP 怎麼定義？為什麼可以用「總派彩 ÷ (總組合數 × 押注)」算？</summary>
+    <div class="ans">定義：RTP = E[W] ÷ bet，每押 1 元平均拿回多少。因為各軸均勻且獨立，每種停輪組合機率都是 1/T，E[W] = Σw × (1/T) = 總派彩 ÷ T，所以 RTP = 總派彩 ÷ (T × bet)，等於「每種組合各轉一次」的總派彩除以總押注。前提是等機率。例：T = 30⁵、bet = 50、總派彩 1,166,400,000 → RTP = 0.96。</div>
+  </details>
+  <details class="qa">
+    <summary>捲軸有兩個 J 只隔 2 格（位置 5 和 7），看不到 J 的停止位置數 N 會比 L − 3c 多還是少？視窗內 J 的總個數呢？</summary>
+    <div class="ans">N 比較多。位置 5 的 J 被停止位置 3、4、5 看到，位置 7 的 J 被 5、6、7 看到，停在 5 重疊，看得到 J 的只有 5 個停止位置，N = L − 3c + 1（重疊幾個多幾個）。但總個數仍是 3c，因為停在 5 那格是 2，重疊被算在同一格裡。</div>
+  </details>
+  <details class="qa">
+    <summary>捲軸頭尾相接怎麼算視窗？規格改成 32 格，你的模型要改哪裡？</summary>
+    <div class="ans">往下第 k 格 = MOD(p − 1 + k, L) + 1（0 起算則是 (p + k) % L）。L 用 COUNTA 從設定讀，不寫死，所以只要改 game.json 再重新整理，公式不用動。寫死的數字會漏改，而且漏改不報錯、只會默默算錯。</div>
+  </details>
 </section>
 
-<!-- 12 -->
+<!-- 16 -->
 <section class="card" id="todo">
-  <h2><span class="num">12</span>待學：參考資料裡還沒學到的</h2>
+  <h2><span class="num">16</span>待學：參考資料裡還沒學到的</h2>
   <p class="src">對照 ezslotdesign.com/slotmath4/</p>
   <ul>
     <li><strong>Wild 替代公式</strong>：4 連 K = WK·WK·WK·WK·X_WK，WK = K 或 Wild，X_WK = 既不是 K 也不是 Wild。（Day 4）</li>
@@ -429,10 +602,15 @@ RTP = E[一盤派彩] / 50</pre>
   </ul>
 </section>
 
-<!-- 13 -->
+<!-- 17 -->
 <section class="card" id="log">
-  <h2><span class="num">13</span>更新紀錄</h2>
+  <h2><span class="num">17</span>更新紀錄</h2>
   <ul class="log">
+    <li><time datetime="2026-11-13">2026-11-13</time>第 14 節補 Excel Ways 表、Paytable 查詢、L5 儲存格陷阱、覆蓋既有查詢造成 #REF! 的事故與修復。</li>
+    <li><time datetime="2026-11-13">2026-11-13</time>新增第 14 節 Ways 總路數（乘法原理、單一盤面路數、全部盤面加總拆成 Sum×Sum×Sum×N×L、最後一軸用 L 的陷阱）。</li>
+    <li><time datetime="2026-11-13">2026-11-13</time>新增第 13 節 RTP：定義與推導（名詞：軸、捲軸帶、停止位置、RTP…；期望值推導、小例子、與 Ways 路數的關係、等機率前提；總派彩 vs 命中頻率）；面試問答新增 RTP 兩種角度。</li>
+    <li><time datetime="2026-11-13">2026-11-13</time>新增第 12 節 Window 表（MOD 環狀位置、COUNTA 不寫死、INDEX、COUNTIF 計數、Sum = 3c 與 N = L − 3c 驗算、複製工作表與 Ctrl+H、四個陷阱）；面試問答新增 2 題。</li>
+    <li><time datetime="2026-11-12">2026-11-12</time>新增第 11 節 Excel PAR Sheet（Power Query 匯入、COUNTIF 與 $ 混合參照、H1 儲存格陷阱、合計列驗算）；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-12">2026-11-12</time>新增第 10 節遊戲設定檔（欄位用途、物件 vs 陣列、押注 50 與整數賠率、一致性檢查陷阱）。</li>
     <li><time datetime="2026-11-12">2026-11-12</time>新增第 09 節派彩規則（Lines vs Ways、練習盤面、只算最長的理由）與遊戲型式決定；第 08 節補「排列對 RTP 的影響」；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-12">2026-11-12</time>新增第 08 節間隔通式（含堆疊例與捷徑成立條件的證明）、兩題面試問答、第 10 節待學清單（對照 slotmath4）。</li>
