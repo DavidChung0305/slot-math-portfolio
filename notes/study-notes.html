@@ -521,8 +521,51 @@ Paytable 查詢（Power Query，讀 game.json 的 paytable）：
   Tbl      = Record.ToTable(Pay),                      ← 物件 → Name / Value 兩欄
   Expanded = Table.ExpandRecordColumn(Tbl, "Value", {"3","4","5"}, {"Pay3","Pay4","Pay5"}),
   Result   = Table.RenameColumns(Expanded, {{"Name","Symbol"}})</pre>
+  <h3>查表：INDEX + MATCH</h3>
+  <p>Ways 表符號在欄、Paytable 符號在列，方向不同不能直接拖，要用符號名稱查表。</p>
+  <pre class="math">INDEX(一排資料, 第幾個)     給第幾個 → 告訴你是什麼
+MATCH(要找的值, 一排資料, 0) 給是什麼 → 告訴你第幾個（0 = 完全相同才算）
+
+MATCH("H1", Paytable[Symbol], 0) = 1
+MATCH("Q",  Paytable[Symbol], 0) = 6
+MATCH("Z",  Paytable[Symbol], 0) = #N/A     ← 找不到
+
+B15 = INDEX(Paytable[[Pay3]:[Pay3]], MATCH(B$1, Paytable[[Symbol]:[Symbol]], 0))</pre>
+  <div class="tbl"><table>
+    <thead><tr><th>要鎖住的東西</th><th>會移動</th><th>鎖住</th></tr></thead>
+    <tbody>
+      <tr><td>一般儲存格</td><td><code>A1</code></td><td><code>$A$1</code></td></tr>
+      <tr><td>表格欄位</td><td><code>T[Col]</code></td><td><code>T[[Col]:[Col]]</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="trap"><strong>#N/A（找不到）比回傳 0 好</strong>若找不到時回傳 0，派彩會默默變 0、RTP 算錯卻沒有警告。錯誤要被看見。最常見原因：符號名稱前後有空格（" H1" ≠ "H1"）。</div>
+  <div class="trap"><strong>陷阱：表格欄位往右拖會移動</strong>Paytable[Pay3] 往右拖變 Paytable[Pay4]、Paytable[Symbol] 變 Paytable[Pay3]，查詢範圍錯掉。要寫成 Paytable[[Pay3]:[Pay3]] 鎖住。</div>
   <div class="trap"><strong>陷阱：名稱 L5 是儲存格位址</strong>公式寫 <code>=B2*B3*B4*B7*L5</code>，L5 被讀成 L 欄第 5 列（空白 = 0），結果是 0。要寫存放該值的格子 B9。和 Counts 表的 H1 是同一個陷阱。</div>
   <div class="trap"><strong>陷阱：在既有查詢裡貼新程式碼 = 改掉它</strong>打開 Reels 查詢的進階編輯器後貼上 Paytable 程式碼，Reels 表就被換成賠率表。所有 Reels[...] 公式被 Excel 永久改成 <code>#REF!</code>（參照錯誤：讀的東西不見了），最後一欄還被改指到 Paytable[Symbol]。新增查詢一律從「取得資料 → 空白查詢」開始。修復：重建 Reels 查詢，再用 Ctrl+H 把 <code>#REF!</code> 換回 <code>Reels[ReelN]</code>。教訓：xlsx 也要 commit 進 git 才有備份。</div>
+  <h3>結果：主遊戲 RTP</h3>
+  <pre class="math">Win3/4/5  = Ways × Pay          WinTotal = Win3 + Win4 + Win5
+RTP 貢獻  = WinTotal ÷ (T × Bet)   =B22/($L$19*$L$20)
+T         = L1 × L2 × L3 × L4 × L5 =Window1!G2*…*Window5!G2   ← 不用 30^5，軸長不同也對
+Bet       = INDEX(Config[Bet], 1)  ← Config 查詢：#table({"Bet"}, {{Source[bet]}})
+
+        H1      H2      H3      A       K       Q       J       T
+RTP    .01344  .03726  .02408  .03738  .03738  .02534  .06563  .04688
+
+TotalWin = 349,166,700      RTP = 0.28738（Excel 與 Python 獨立計算一致）</pre>
+  <div class="trap"><strong>算對 ≠ 設計好</strong>28.7% 遠低於業界 92%～97%。公式沒錯，是遊戲太小氣。單一設定檔讓 Excel、Python 結果一致，但抓不到設計問題；PAR Sheet 的用途就是上線前發現並調整。最高賠率的 H1 只貢獻 1.34%：稀有符號湊齊機率低，RTP 主要靠常見符號。</div>
+  <h3>加入 Wild（百搭符號）</h3>
+  <p>Wild（W）可以代替任何一般符號。同一個 W 可以同時幫好幾個符號湊成連線，所以會拉高 RTP 和命中頻率。</p>
+  <pre class="math">盤面：  軸1 K/T/A   軸2 W/K/Q   軸3 A/K/H1   軸4 Q/J/T
+  3 連 K：1 × (K + W = 2) × 1 = 2 路
+  3 連 A：1 × (W = 1)     × 1 = 1 路     ← 同一個 W 同時幫 K 和 A
+
+公式形狀不變，把「K」換成「K 或 W」：
+  剛好 3 連 K = Sum₁ × Sum₂ × Sum₃ × N₄ × L₅
+  Sumᵢ = 第 i 軸視窗裡「K 或 W」的個數加總 = 3(c_K + c_W)（間距夠時）
+  Nᵢ   = 第 i 軸視窗裡「沒有 K 也沒有 W」的停止位置數
+
+ezslotdesign 寫法：WK·WK·WK·X_WK，WK = K 或 Wild，X_WK = 既非 K 也非 Wild</pre>
+  <div class="trap"><strong>陷阱：斷掉的軸出現 W 就沒斷</strong>軸 4 有 W 時，W 當 K，3 連變 4 連。所以 N 要排除 K 和 W 兩者。</div>
   <div class="key"><strong>總派彩</strong>= Σ（各獎項總路數 × 每路賠率），再代入 RTP = 總派彩 ÷ (30⁵ × 50)。</div>
 </section>
 
@@ -583,6 +626,10 @@ Paytable 查詢（Power Query，讀 game.json 的 paytable）：
     <div class="ans">定義：RTP = E[W] ÷ bet，每押 1 元平均拿回多少。因為各軸均勻且獨立，每種停輪組合機率都是 1/T，E[W] = Σw × (1/T) = 總派彩 ÷ T，所以 RTP = 總派彩 ÷ (T × bet)，等於「每種組合各轉一次」的總派彩除以總押注。前提是等機率。例：T = 30⁵、bet = 50、總派彩 1,166,400,000 → RTP = 0.96。</div>
   </details>
   <details class="qa">
+    <summary>把押注從 50 降到 16（等於賠率全部放大約 3 倍），RTP 和命中頻率各會怎樣？</summary>
+    <div class="ans">RTP 反比放大：0.28738 × 50/16 ≈ 0.898。命中頻率不變，因為連線規則和捲軸沒改，每個盤面有沒有中獎都一樣，只是中獎時拿回的倍數變大。所以 RTP 相同的遊戲手感可能完全不同，要看派彩怎麼分配（波動度，Day 6）。押注必須是整數：往上取整 RTP 會略低（16 → 89.8%）。</div>
+  </details>
+  <details class="qa">
     <summary>捲軸有兩個 J 只隔 2 格（位置 5 和 7），看不到 J 的停止位置數 N 會比 L − 3c 多還是少？視窗內 J 的總個數呢？</summary>
     <div class="ans">N 比較多。位置 5 的 J 被停止位置 3、4、5 看到，位置 7 的 J 被 5、6、7 看到，停在 5 重疊，看得到 J 的只有 5 個停止位置，N = L − 3c + 1（重疊幾個多幾個）。但總個數仍是 3c，因為停在 5 那格是 2，重疊被算在同一格裡。</div>
   </details>
@@ -597,7 +644,7 @@ Paytable 查詢（Power Query，讀 game.json 的 paytable）：
   <h2><span class="num">16</span>待學：參考資料裡還沒學到的</h2>
   <p class="src">對照 ezslotdesign.com/slotmath4/</p>
   <ul>
-    <li><strong>Wild 替代公式</strong>：4 連 K = WK·WK·WK·WK·X_WK，WK = K 或 Wild，X_WK = 既不是 K 也不是 Wild。（Day 4）</li>
+    <li><s><strong>Wild 替代公式</strong></s> ✓ 已學（第 14 節「加入 Wild」）</li>
     <li><strong>期望值要除以押注</strong>：Lines 以每線押 1 為單位；Ways 以每轉為單位，要除以每轉押注才是 RTP。（Day 4）</li>
   </ul>
 </section>
@@ -606,6 +653,10 @@ Paytable 查詢（Power Query，讀 game.json 的 paytable）：
 <section class="card" id="log">
   <h2><span class="num">17</span>更新紀錄</h2>
   <ul class="log">
+    <li><time datetime="2026-11-13">2026-11-13</time>第 14 節新增「加入 Wild」：單一盤面例、Sum 與 N 改為 K 或 W、斷掉的軸出現 W 的陷阱；待學清單劃掉 Wild 替代公式。</li>
+    <li><time datetime="2026-11-13">2026-11-13</time>面試問答新增「降低押注對 RTP 與命中頻率的影響」；決定 Bet 維持 50，等全部功能加完再調 RTP。</li>
+    <li><time datetime="2026-11-13">2026-11-13</time>第 14 節補主遊戲 RTP 結果（各符號貢獻、T 與 Bet 從設定讀、RTP 0.28738 偏低的意義）。</li>
+    <li><time datetime="2026-11-13">2026-11-13</time>第 14 節補查表：INDEX + MATCH、#N/A、表格欄位鎖定 [[Col]:[Col]]。</li>
     <li><time datetime="2026-11-13">2026-11-13</time>第 14 節補 Excel Ways 表、Paytable 查詢、L5 儲存格陷阱、覆蓋既有查詢造成 #REF! 的事故與修復。</li>
     <li><time datetime="2026-11-13">2026-11-13</time>新增第 14 節 Ways 總路數（乘法原理、單一盤面路數、全部盤面加總拆成 Sum×Sum×Sum×N×L、最後一軸用 L 的陷阱）。</li>
     <li><time datetime="2026-11-13">2026-11-13</time>新增第 13 節 RTP：定義與推導（名詞：軸、捲軸帶、停止位置、RTP…；期望值推導、小例子、與 Ways 路數的關係、等機率前提；總派彩 vs 命中頻率）；面試問答新增 RTP 兩種角度。</li>
