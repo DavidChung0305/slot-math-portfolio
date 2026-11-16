@@ -144,8 +144,8 @@ details.qa .ans { color: var(--ink); padding: 6px 0 0 4px; }
   <h1>機率工程師轉職筆記</h1>
   <p>slot-math-portfolio 的觀念整理。每完成一個段落就補上新的一節，複習時先看「重點」和「陷阱」，再自己把面試問答答一遍。</p>
   <div class="meta">
-    <span class="chip">目前進度：Day 4 第 1 步（Ways 路數）</span>
-    <span class="chip">最後更新：2026-11-13</span>
+    <span class="chip">目前進度：Day 4（命中頻率完成，下一步 Scatter）</span>
+    <span class="chip">最後更新：2026-11-17</span>
   </div>
 </header>
 
@@ -567,6 +567,95 @@ TotalWin = 349,166,700      RTP = 0.28738（Excel 與 Python 獨立計算一致�
 ezslotdesign 寫法：WK·WK·WK·X_WK，WK = K 或 Wild，X_WK = 既非 K 也非 Wild</pre>
   <div class="trap"><strong>陷阱：斷掉的軸出現 W 就沒斷</strong>軸 4 有 W 時，W 當 K，3 連變 4 連。所以 N 要排除 K 和 W 兩者。</div>
   <div class="key"><strong>總派彩</strong>= Σ（各獎項總路數 × 每路賠率），再代入 RTP = 總派彩 ÷ (30⁵ × 50)。</div>
+  <h3>Wild 的三個設計決定</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>決定</th><th>選擇</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td>放哪幾軸</td><td>只放軸 2–5</td><td>Ways 從軸 1 開始連，軸 1 的符號決定「這條路是誰」。軸 1 若是 W，同一條路可以算成好幾個符號的連線，要比較取最高，各符號不能分開算，「每符號一欄」的公式就壞了。</td></tr>
+      <tr><td>W 本身派不派彩</td><td>不派彩（純替代 Wild，substitute-only）</td><td>軸 1 沒有 W，不可能出現整條都是 W 的連線，W 不需要放進 paytable。</td></tr>
+      <tr><td>放幾個、取代誰</td><td>軸 2–5 各 1 個，取代 T，維持 30 格</td><td>T 最多、分數最低：拿掉一個 T 對 T 的 Sum 影響最小，而且 W 補回 3，T 的 Sum 完全不變。</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Wild 對高分符號放大最多</h3>
+  <pre class="math">每軸加 1 個 W → 每個符號的 Sum 都 +3，但看「倍數」：
+  H1：6 → 9    ×1.5        K：12 → 15   ×1.25
+
+5 連 = Sum₁ × Sum₂ × Sum₃ × Sum₄ × Sum₅（Sum₁ 不變，軸 1 沒 W）
+  H1：1.5⁴  ≈ ×5.06
+  K ：1.25⁴ ≈ ×2.44
+
+H1 各獎項倍數：
+  3 連  1.5² × (21/24) = ×1.97      ← N₄ 從 24 變 21（軸 4 多了 W）
+  4 連  1.5³ × (21/24) = ×2.95
+  5 連  1.5⁴           = ×5.06
+  整體  ×2.99 = 以原本派彩為權重的加權平均（3 連原本佔近一半）</pre>
+  <p>結論：Wild 對<strong>稀有的高分符號</strong>和<strong>長連線</strong>放大最多 → RTP 上升，<strong>波動度也上升</strong>。</p>
+  <h3>Excel 實作與結果</h3>
+  <pre class="math">Window1（軸 1 沒 W）：=COUNTIF($I2:$K2, M$1)                       ← 不改
+Window2–5：           =COUNTIF($I2:$K2, M$1)+COUNTIF($I2:$K2, "W")  ← K 或 W 的個數
+
+        加 W 前   加 W 後   倍數
+H1      1.34%    4.01%    ×2.99
+H2      3.73%    8.90%    ×2.39
+H3      2.41%    5.68%    ×2.36
+A       3.74%    7.50%    ×2.01
+K       3.74%    7.80%    ×2.09
+Q       2.53%    5.42%    ×2.14
+J       6.56%   12.29%    ×1.87
+T       4.69%    4.69%    ×1.00
+合計   28.74%   56.29%   （Excel 與 Python 獨立計算一致）</pre>
+  <h3>名詞：軸、格、停止位置、視窗上中下、Excel 列</h3>
+  <p>「列」有三種意思，數字一樣不代表指同一個東西。換算前先問：這個數字是哪一種編號？</p>
+  <div class="tbl"><table>
+    <thead><tr><th>名詞</th><th>意思</th><th>範圍</th></tr></thead>
+    <tbody>
+      <tr><td>軸</td><td>直的一條捲軸</td><td>1–5</td></tr>
+      <tr><td>格</td><td>捲軸帶上的位置</td><td>1–30</td></tr>
+      <tr><td>停止位置 p</td><td>停下來時視窗最上面是第幾格（P1、P2、P3）</td><td>1–30</td></tr>
+      <tr><td>視窗上／中／下</td><td>畫面露出的 3 格；在 Excel 是 Sym1–Sym3 三個「欄」</td><td>3 個</td></tr>
+      <tr><td>Excel 列</td><td>試算表左邊的列號；Window 表一個 Excel 列 = 一個停止位置</td><td>表頭佔第 1 列</td></tr>
+      <tr><td>INDEX 的第幾列</td><td>範圍內數下來第幾個；範圍從 Excel 第 2 列開始時 = 停止位置</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <pre class="math">停止位置 p  ⇄  Window 表 Excel 列 = p + 1
+停止位置 p  →  視窗 上 = 格 p、中 = 格 p+1、下 = 格 p+2（超過 30 繞回）
+
+例：軸 2 停在第 3 格 → 視窗 格3/格4/格5 → Window2 的 Excel 第 4 列
+    Window2 的 Excel 第 3 列 → 停在第 2 格 → 格 3 是「中」，不是「下」</pre>
+  <div class="trap"><strong>陷阱：有 Wild 後 N ≠ L − Sum</strong>間距 ≥ 3 只要求「同符號」，W 和 A 可以相鄰。Window2 第 5 格 A、第 6 格 W，停止位置 4、5 的視窗都同時有 A 和 W，Sum 多算 2：N = 30 − 15 + 2 = 17。所以 N 一定要直接數，不能靠捷徑。</div>
+  <h3>命中頻率（Hit Frequency）</h3>
+  <p>命中頻率 = 一轉至少中一個獎的機率。各符號的中獎事件<strong>不互斥</strong>（同一轉 H1 和 K 可能都 3 連），不能把各符號的命中機率相加；8 個符號用排容要 2⁸ − 1 = 255 項，所以改成直接數盤面。</p>
+  <pre class="math">只要看前 3 軸：前 3 軸沒連起來，軸 4、5 怎麼停都救不回；已連起來，軸 4、5 只影響中多少
+  組合數 = 30 × 30 × 30 = 27,000（每種後面接 900 種軸 4、5，分子分母約掉）
+
+中獎 ⇔ ∃ s ∈ 視窗₁，使得 (s ∈ 視窗₂ 或 W ∈ 視窗₂) 且 (s ∈ 視窗₃ 或 W ∈ 視窗₃)
+  軸 1 沒有 W → 候選 s 只有軸 1 視窗的 3 個符號</pre>
+  <h3>Excel：Hit 表（窮舉 27,000 種）</h3>
+  <pre class="math">A  n     =ROW()-2                       0 … 26999
+B  P1    =INT(A2/900)+1                 ← n 寫成 30 進位，三個位數各 +1
+C  P2    =MOD(INT(A2/30),30)+1
+D  P3    =MOD(A2,30)+1
+E–G S1–S3  =INDEX(Window1!$I$2:$K$31, $B2, 1/2/3)       ← INDEX 二維：(範圍, 第幾列, 第幾欄)
+H–J Hit1–3 =AND(INDEX(Window2!$M$2:$T$31, $C2, MATCH(E2, Window2!$M$1:$T$1, 0))>0,
+                INDEX(Window3!$M$2:$T$31, $D2, MATCH(E2, Window3!$M$1:$T$1, 0))>0)
+K  Hit   =OR(H2:J2)
+
+N1 中獎組合數  =COUNTIF(K2:K27001, TRUE)          13,953
+N2 總組合數    =Window1!G2*Window2!G2*Window3!G2  27,000
+N3 命中頻率    =N1/N2                              0.5168
+N4 平均幾轉中  =1/N3                               1.94   ← 幾何分布平均 1/p</pre>
+  <p><strong>MATCH 的角色：</strong>INDEX 只看得懂數字，E2 存的是符號名稱。MATCH 把名稱翻成欄號（"T" → 8），INDEX 再用欄號拿個數。每一列的候選符號不同，所以不能寫死欄號。</p>
+  <p><strong>混合參照：</strong>H2 往右拖到 I2、J2，E2 → F2 → G2（換候選符號），<code>$C2</code>、<code>$D2</code> 釘住欄（同一轉的停止位置不變），列號不加 $（往下拖每列讀自己的）。</p>
+  <div class="trap"><strong>陷阱：窮舉表的列數不會跟著捲軸長度變</strong>N2 從捲軸長度算，但 Hit 表的 27,000 列是手拉的。改捲軸長度要重拉，否則 N1 少數。之後 Python 用向量化窮舉取代。</div>
+  <h3>RTP ÷ 命中頻率 = 中獎時平均贏幾倍</h3>
+  <pre class="math">全期望值：E[W] = P(H)·E[W | H] + P(沒中)·E[W | 沒中]
+          0.5629 = 0.5168 · E[W | H] + 0.4832 · 0
+          E[W | H] = 0.5629 / 0.5168 ≈ 1.09 倍押注
+
+          RTP    命中頻率   中獎時平均
+遊戲 A    96%     50%       1.92 倍     常中、中得小（低波動）
+遊戲 B    96%     10%       9.6 倍      少中、中得大（高波動）</pre>
+  <div class="key"><strong>LDW（Loss Disguised as a Win）</strong>派彩小於押注的「中獎」：有閃光音效，但這一轉其實虧錢。例：押 50 中 3 連 T 只付 5。命中頻率高、平均倍數低的遊戲 LDW 很多。</div>
 </section>
 
 <!-- 15 -->
@@ -637,6 +726,26 @@ ezslotdesign 寫法：WK·WK·WK·X_WK，WK = K 或 Wild，X_WK = 既非 K 也�
     <summary>捲軸頭尾相接怎麼算視窗？規格改成 32 格，你的模型要改哪裡？</summary>
     <div class="ans">往下第 k 格 = MOD(p − 1 + k, L) + 1（0 起算則是 (p + k) % L）。L 用 COUNTA 從設定讀，不寫死，所以只要改 game.json 再重新整理，公式不用動。寫死的數字會漏改，而且漏改不報錯、只會默默算錯。</div>
   </details>
+  <details class="qa">
+    <summary>Ways 遊戲的 Wild 為什麼通常不放第 1 軸？</summary>
+    <div class="ans">第 1 軸的符號決定一條路屬於哪個符號。第 1 軸是 W 的話，同一條路可以算成好幾個符號的連線，必須比較後只付最高的，各符號不再獨立，不能每個符號分開算再加總。只放軸 2–5 時，W 只要看軸 1 就知道自己代替誰，答案唯一。</div>
+  </details>
+  <details class="qa">
+    <summary>加一個 Wild，RTP 和波動度會怎麼變？哪些符號受影響最大？</summary>
+    <div class="ans">兩個都升。每軸加 1 個 W，每個符號的 Sum 都 +3，但原本少的符號放大比例大（H1 6→9 ×1.5，K 12→15 ×1.25），而且 5 連要乘 4 次（1.5⁴ ≈ 5.06 vs 1.25⁴ ≈ 2.44）。高分符號、長連線放大最多 → 大獎機率增加最多 → 波動度上升。本專案 RTP 從 28.74% 升到 56.29%。</div>
+  </details>
+  <details class="qa">
+    <summary>H1 的 5 連路數 ×5.06，為什麼 H1 整體 RTP 只 ×2.99？</summary>
+    <div class="ans">整體倍數是 3、4、5 連倍數的加權平均，權重是原本的派彩。3 連只乘到 2 個 1.5，而且 N₄ 因為多了 W 從 24 變 21，倍數只有 ×1.97；3 連原本又佔 H1 派彩將近一半，所以整體被拉低到 ×2.99。</div>
+  </details>
+  <details class="qa">
+    <summary>命中頻率為什麼不能把各符號的命中機率相加？那要怎麼算？</summary>
+    <div class="ans">各符號的中獎事件不互斥，同一轉可能兩個符號都中，相加會重複計算。排容 8 個符號要 255 項，改成直接數「至少中一個」的盤面。只要看前 3 軸（3 連就算中），窮舉 30³ = 27,000 種：存在軸 1 的某個符號 s，軸 2、3 都有 s 或 W 就算中。本專案 13,953 / 27,000 = 51.68%，1 in 1.94。</div>
+  </details>
+  <details class="qa">
+    <summary>RTP 56%、命中頻率 52%，中獎時平均贏幾倍？玩家感受如何？</summary>
+    <div class="ans">全期望值：E[W] = P(H)·E[W|H]，沒中派彩 0，所以 E[W|H] = RTP ÷ 命中頻率 ≈ 1.09 倍。很多中獎派彩小於押注（LDW），常中但餘額慢慢減少，低波動手感。降押注時 RTP 和平均倍數同比例放大，命中頻率不變。</div>
+  </details>
 </section>
 
 <!-- 16 -->
@@ -653,6 +762,9 @@ ezslotdesign 寫法：WK·WK·WK·X_WK，WK = K 或 Wild，X_WK = 既非 K 也�
 <section class="card" id="log">
   <h2><span class="num">17</span>更新紀錄</h2>
   <ul class="log">
+    <li><time datetime="2026-11-17">2026-11-17</time>第 14 節新增命中頻率：不互斥、只看前 3 軸、中獎規則、Excel Hit 表（30 進位、INDEX 二維、MATCH、AND/OR、混合參照）、結果 51.68%、RTP ÷ 命中頻率與 LDW；面試問答新增 2 題。</li>
+    <li><time datetime="2026-11-16">2026-11-16</time>第 14 節新增名詞整理：軸、格、停止位置、視窗上中下、Excel 列、INDEX 的第幾列，與換算公式。</li>
+    <li><time datetime="2026-11-16">2026-11-16</time>第 14 節新增 Wild 三個設計決定、Wild 放大高分符號的倍數分析、Excel 實作與 RTP 28.74% → 56.29%、有 Wild 後 N ≠ L − Sum 的陷阱；面試問答新增 3 題。</li>
     <li><time datetime="2026-11-13">2026-11-13</time>第 14 節新增「加入 Wild」：單一盤面例、Sum 與 N 改為 K 或 W、斷掉的軸出現 W 的陷阱；待學清單劃掉 Wild 替代公式。</li>
     <li><time datetime="2026-11-13">2026-11-13</time>面試問答新增「降低押注對 RTP 與命中頻率的影響」；決定 Bet 維持 50，等全部功能加完再調 RTP。</li>
     <li><time datetime="2026-11-13">2026-11-13</time>第 14 節補主遊戲 RTP 結果（各符號貢獻、T 與 Bet 從設定讀、RTP 0.28738 偏低的意義）。</li>
