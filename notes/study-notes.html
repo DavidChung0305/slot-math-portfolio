@@ -144,7 +144,7 @@ details.qa .ans { color: var(--ink); padding: 6px 0 0 4px; }
   <h1>機率工程師轉職筆記</h1>
   <p>slot-math-portfolio 的觀念整理。每完成一個段落就補上新的一節，複習時先看「重點」和「陷阱」，再自己把面試問答答一遍。</p>
   <div class="meta">
-    <span class="chip">目前進度：Day 4（命中頻率完成，下一步 Scatter）</span>
+    <span class="chip">目前進度：Day 4（Scatter 已放上捲軸，下一步 Scatter 派彩）</span>
     <span class="chip">最後更新：2026-11-17</span>
   </div>
 </header>
@@ -656,6 +656,30 @@ N4 平均幾轉中  =1/N3                               1.94   ← 幾何分布�
 遊戲 A    96%     50%       1.92 倍     常中、中得小（低波動）
 遊戲 B    96%     10%       9.6 倍      少中、中得大（高波動）</pre>
   <div class="key"><strong>LDW（Loss Disguised as a Win）</strong>派彩小於押注的「中獎」：有閃光音效，但這一轉其實虧錢。例：押 50 中 3 連 T 只付 5。命中頻率高、平均倍數低的遊戲 LDW 很多。</div>
+  <h3>Scatter（分散符號）</h3>
+  <p>不用連線、不用從軸 1 開始，只數整個畫面上出現幾個。通常付<strong>押注的倍數</strong>（不是每路），並觸發免費遊戲。業界通常讓每軸視窗最多 1 個 S，所以 S 的個數 = 看得到 S 的軸數。</p>
+  <pre class="math">X = 畫面上 S 的個數；每軸看得到 S 的機率都是 q，各軸獨立
+X ~ Binomial(5, q)      P(X = k) = C(5, k) · q^k · (1 − q)^(5 − k)
+
+q = 3/30 = 0.1（每軸 1 個 S，3 個停止位置看得到）
+  P(X = 3) = 10 × 0.001 × 0.81  = 0.0081     約 1/123
+  P(X = 4) = 5 × 0.0001 × 0.9   = 0.00045    約 1/2,222
+  P(X = 5) = 1 × 0.00001        = 0.00001    1/100,000
+  P(X ≥ 3) = 0.00856（互斥可相加）→ 平均 1/0.00856 ≈ 117 轉觸發   ← 幾何分布
+
+只放軸 1、3、5：最多 3 個，P(3 個) = q³ = 0.001（C(3,3) = 1），1,000 轉才觸發</pre>
+  <div class="tbl"><table>
+    <thead><tr><th>決定</th><th>選擇</th><th>理由</th></tr></thead>
+    <tbody>
+      <tr><td>放哪幾軸</td><td>軸 1–5</td><td>可以有 3、4、5 個，給不同次數的免費轉</td></tr>
+      <tr><td>W 能不能代替 S</td><td>不能</td><td>代替的話 q 變成約 0.2 且各軸不同（不再是二項分布），觸發率被 W 綁住，調 W 會連帶改到免費遊戲；不代替則主遊戲和免費遊戲可以分開調</td></tr>
+      <tr><td>幾個、取代誰</td><td>每軸 1 個，取代 J</td><td>q = 0.1 → 約 1/117 觸發，在業界 1/100–1/200 內；取代 T 會讓最低分的 T 變最少，違反「分數越低越多」；J 原本貢獻最高（12.29%）</td></tr>
+    </tbody>
+  </table></div>
+  <pre class="math">加 S 之後（主遊戲，不含 Scatter 派彩）：
+  J 貢獻 12.29% → 5.25%     RTP 56.29% → 49.25%
+  命中頻率 51.68% → 47.63%（1 in 2.10）</pre>
+  <div class="trap"><strong>陷阱：加新符號後，舊的查表公式會出 #N/A</strong>Window 表頭只有 8 個一般符號，Hit 表候選符號是 S 時 MATCH 找不到 → #N/A 一路傳到 INDEX、AND、OR，COUNTIF 默默少數 2,700 列（軸 1 有 3 個停止位置看得到 S × 900），命中頻率被算成 43.72%。修法：<code>=IF(E2="S", FALSE, AND(…))</code>。不用 IFERROR，因為它會把所有錯誤（例如表頭空格）都吞掉；IF 只排除已知情況，意外錯誤仍看得到。</div>
 </section>
 
 <!-- 15 -->
@@ -746,6 +770,14 @@ N4 平均幾轉中  =1/N3                               1.94   ← 幾何分布�
     <summary>RTP 56%、命中頻率 52%，中獎時平均贏幾倍？玩家感受如何？</summary>
     <div class="ans">全期望值：E[W] = P(H)·E[W|H]，沒中派彩 0，所以 E[W|H] = RTP ÷ 命中頻率 ≈ 1.09 倍。很多中獎派彩小於押注（LDW），常中但餘額慢慢減少，低波動手感。降押注時 RTP 和平均倍數同比例放大，命中頻率不變。</div>
   </details>
+  <details class="qa">
+    <summary>Scatter 和一般符號的機率算法差在哪？每軸 1 個 S、軸長 30，平均幾轉觸發免費遊戲（3 個以上）？</summary>
+    <div class="ans">一般符號要從軸 1 連下去，用 Sum × Sum × Sum × N × L；Scatter 只數畫面上的個數，各軸獨立且 q 相同時 X ~ Binomial(5, q)。q = 3/30 = 0.1，P(X ≥ 3) = 0.0081 + 0.00045 + 0.00001 = 0.00856，平均 1/0.00856 ≈ 117 轉（幾何分布）。</div>
+  </details>
+  <details class="qa">
+    <summary>Wild 為什麼通常不代替 Scatter？</summary>
+    <div class="ans">代替的話，觸發機率大增，而且軸 1（沒有 W）和軸 2–5 的 q 不同，不再是二項分布。更重要的是觸發率會被 W 綁住：調 W 來改主遊戲 RTP，會連帶改到免費遊戲。不代替就能分開調整。</div>
+  </details>
 </section>
 
 <!-- 16 -->
@@ -762,6 +794,7 @@ N4 平均幾轉中  =1/N3                               1.94   ← 幾何分布�
 <section class="card" id="log">
   <h2><span class="num">17</span>更新紀錄</h2>
   <ul class="log">
+    <li><time datetime="2026-11-17">2026-11-17</time>第 14 節新增 Scatter：定義、二項分布觸發機率、三個設計決定、加 S 後 RTP 與命中頻率、#N/A 陷阱（IF vs IFERROR）；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-17">2026-11-17</time>第 14 節新增命中頻率：不互斥、只看前 3 軸、中獎規則、Excel Hit 表（30 進位、INDEX 二維、MATCH、AND/OR、混合參照）、結果 51.68%、RTP ÷ 命中頻率與 LDW；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-16">2026-11-16</time>第 14 節新增名詞整理：軸、格、停止位置、視窗上中下、Excel 列、INDEX 的第幾列，與換算公式。</li>
     <li><time datetime="2026-11-16">2026-11-16</time>第 14 節新增 Wild 三個設計決定、Wild 放大高分符號的倍數分析、Excel 實作與 RTP 28.74% → 56.29%、有 Wild 後 N ≠ L − Sum 的陷阱；面試問答新增 3 題。</li>
