@@ -69,8 +69,8 @@ slot-math-portfolio/
 - [x] Day 1　期望值、條件機率、全期望值、排列組合
 - [x] Day 2　伯努利／二項／幾何分布、離散分布的 μ 與 σ、中央極限定理、信賴區間；Python 與 NumPy 基礎
 - [x] Day 3　Lines／Ways、賠率表；Excel 建捲軸、算各獎項組合數
-- [ ] Day 4　Excel：Wild、Scatter、主遊戲 RTP、命中頻率
-- [ ] Day 5　Excel：免費遊戲、重觸發 1/(1−r)、總 RTP
+- [x] Day 4　Excel：Wild、Scatter、主遊戲 RTP、命中頻率
+- [x] Day 5　Excel：免費遊戲、重觸發 1/(1−r)、總 RTP
 - [ ] Day 6　Excel：變異數、波動度指數、派彩區間分佈（樞紐分析表）、信賴區間 → PAR Sheet v1
 - [ ] Day 7　Python 結算邏輯：讀 JSON、單盤面結算、整數計算
 - [ ] Day 8　NumPy 模擬 1,000 萬轉；Pandas 理論值與模擬值對照表
@@ -108,6 +108,10 @@ slot-math-portfolio/
 ## 進度紀錄
 
 （每次工作結束時由 Claude 更新，最新的放最上面）
+
+- 2026-11-19：**Day 5 免費遊戲 RTP 完成。** 暖身題：勝在 Claude 示範指示變數 X = I₅ + I₇ 後答出 P(X=2) = 1/30，一度把 P(X=1) 用成 5/30（實為 4/30，5/30 是 P(X≥1)）。設計決定（勝）：3/4/5 個 S 給 **10/15/20 次**、**贏分 ×2**（含 Scatter 派彩，Claude 建議、勝未反對）、**可重觸發**；Claude 定免費遊戲用同一套捲軸。勝寫出 r = Σ P(k)·次數 = **0.08795**、等比級數 10/(1−r)、第一步分析 m = 1 + r·m（勝問為什麼，Claude 用全期望值分情況＋自我相似解釋）→ m = 1/(1−r) ≈ 1.0964；Q1 每次送 5 次（r = 5·P(≥3)）、Q2 r ≥ 1 不收斂答對（Claude 補分支過程與上限規則）。條件期望（勝說「教我」：骰子例、1,000,000 轉次數直觀、E[Y|A] = E[Y]/P(A)）→ E[初始|觸發] = 10.27，勝答出比 10 大的原因。RTP_FG = r/(1−r) × 2 × RTP_spin（勝問 RTP_spin／RTP_FG 是什麼、為什麼乘 G7，Claude 解釋單位：次數 × 每次贏幾倍押注、Wald 等式；勝一度答「乘 bet」，提示後答出 ×2）。game.json 新增 `"free_game": {"trigger_symbol":"S","awards":{"3":10,"4":15,"5":20},"multiplier":2,"retrigger":true}`（Claude 教寫、勝貼入）。Excel：Power Query `Config` 加欄 FGMult；新查詢 `FGAwards`（K、Spins）載入 `FreeGame` 工作表 — 勝的「重複」查詢後修改沒保留（仍是 ScatterPay (2) 舊公式），Claude 用 COM 改公式、查詢／表格／連線改名 FGAwards 並存檔；C `=BINOM.DIST(A2,5,Scatter!$H$2,FALSE)`、D `=C2*B2`；摘要勝放在 **F 標籤／G 公式**：G2 P(trigger) 0.00856、G3 r、G4 10.27、G5 m、G6 `=INDEX(Config[FGMult],1)`、G7 `=Scatter!F7`、G8 RTP_FG **9.91%**、G9 **總 RTP 61.27%**（與 Python 一致）。注意：Excel 尚未讀 `retrigger` 開關（m 固定用 1/(1−r)）。筆記第 14 節新增免費遊戲各小節、面試問答 +3、artifact 已重新發布。**game.json、excel、notes、CLAUDE.md 尚未 commit（含上次的修改）。下次從 Day 6 開始**：變異數與波動度指數（先讓勝推：單轉派彩 X 的 Var = E[X²] − E[X]²，主遊戲每個盤面的 X² 怎麼算；免費遊戲含重觸發的變異數較難，可先用模擬或複合分布思路）、派彩區間分佈、信賴區間 → PAR Sheet v1。總 RTP 調到 ~96% 的時機也要在 Day 6 前後決定。
+
+- 2026-11-18：開頭把前次未 commit 的 excel／notes／CLAUDE.md commit 成 dc2dcc5 並 push（origin/main 同步）。**加速方式：勝選 (a)+(b)** — (a) Excel 公式 Claude 直接給、勝解釋為什麼；(b) 機械性 Excel 操作 Claude 用 PowerShell COM 代勞（Excel 沒開時用背景 `New-Object -ComObject Excel.Application` 開檔、改完存檔關閉）；數學推導與設計決定仍由勝先做。暖身題：勝答出「軸 1 視窗少一個候選符號」，Claude 補「S 取代 J、J 變少」。**Scatter 派彩完成：** 勝寫出 RTP_scatter = Σ P(k)·mₖ、選 2×/10×/50× 算出 **2.12%**（漏答點數換算，Claude 補 100/500/2500）。game.json 新增 `"scatter": {"symbol":"S","pays":{"3":100,"4":500,"5":2500}}`；Excel 新增 Power Query `ScatterPay`（K、Pay）與 `Scatter` 工作表：H2:L2 q_i `=COUNTIF(Reels[Reel i],"S")*3/COUNTA(Reels[Reel i])`、M2 AllEqual、D `=BINOM.DIST(A2,5,$H$2,FALSE)`、E `=B2/INDEX(Config[Bet],1)`、F = D×E，F5 Scatter RTP 2.12%、F6 `=Ways!L23` 主遊戲 49.25%、**F7 總 RTP 51.37%**；Python 逐軸 convolve 獨立驗收一致。勝要求解釋三條公式（×3 停止位置圖、BINOM.DIST 參數、INDEX(Config[Bet],1)）。勝第一次寫 P(≥3) 為 `BINOM.DIST(3,5,0.1,TRUE)`（實為 P(≤3)），提示後改對 `1 − BINOM.DIST(2,5,0.1,TRUE)`。Q1（3c/L 前提：間距 ≥ 3，第 5、7 格例 q = 5/30）、Q2（各軸 q 不同 → Poisson 二項、全機率法則拆軸 5，例 0.0126）勝說「教我」，由 Claude 講解。**未答確認題：** 第 5、7 格有 S 時，視窗內 S 的平均個數 E[X]（答案 6/30 = 0.2，即 3c/L 仍是期望值）— 下次當暖身。筆記第 14 節與面試問答已更新、artifact 已重新發布。**game.json、excel、notes、CLAUDE.md 尚未 commit。下次從 Day 5 免費遊戲開始**（先讓勝決定 3/4/5 個 S 給幾次免費轉、免費遊戲中是否有倍數、能否重觸發，再推平均免費轉數 1/(1−r)）。
 
 - 2026-11-17（晚）：Day 4 Scatter 進行中。講解 Scatter 定義（不連線、數個數、付押注倍數、觸發免費遊戲）；勝認出二項分布，Claude 帶算 q = 0.1 時 P(3/4/5) = 0.0081／0.00045／0.00001、P(≥3) = 0.00856、≈117 轉觸發；只放軸 1、3、5 時 P = q³ = 0.001。決定：S 放軸 1–5（勝：3/4/5 個給不同免費轉次數）、W 不代替 S、每軸 1 個 S 取代 J（Claude 建議，理由見筆記）。game.json 已改（S 位置：軸 1 第 2 格、軸 2 第 7、軸 3 第 10、軸 4 第 6、軸 5 第 5；symbols 加 `{"id":"S","tier":"scatter"}`；勝曾在檔尾多打一個 S 導致 JSON 錯誤，已修），commit b829e9a；之前的 Wild／命中頻率 commit cd9fc14。Excel 重新整理後 **主遊戲 RTP 49.25%**（J 12.29% → 5.25%），Hit 表因 MATCH 找不到 "S" 出現 2,700 列 #N/A、命中頻率被算成 43.72%；勝要求 Claude 直接改，Claude 用 PowerShell COM 操作開著的 Excel 把 H2:J27001 改成 `=IF(E2="S", FALSE, AND(…))`（不用 IFERROR 的理由已解釋）並存檔，驗收 **命中頻率 47.63%（1 in 2.10）** 與 Python 一致。**excel 與 notes、CLAUDE.md 尚未 commit。** 未答的題：命中頻率為何從 51.68% 降到 47.63%（J 變少；軸 1 視窗出現 S 時候選少一個）— 下次當暖身題。**下次從 Scatter 派彩開始**：決定 3/4/5 個 S 付幾倍押注（建議如 2×/10×/50×，存成點數整數），config 加 scatter 區塊，Excel 用二項分布算 Scatter RTP 貢獻；之後 Day 5 免費遊戲。勝說「想加快腳步但又覺得困難」，Claude 提了加速建議（見下一次對話開頭確認勝的選擇）。
 

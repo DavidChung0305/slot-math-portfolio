@@ -144,8 +144,8 @@ details.qa .ans { color: var(--ink); padding: 6px 0 0 4px; }
   <h1>機率工程師轉職筆記</h1>
   <p>slot-math-portfolio 的觀念整理。每完成一個段落就補上新的一節，複習時先看「重點」和「陷阱」，再自己把面試問答答一遍。</p>
   <div class="meta">
-    <span class="chip">目前進度：Day 4（Scatter 已放上捲軸，下一步 Scatter 派彩）</span>
-    <span class="chip">最後更新：2026-11-17</span>
+    <span class="chip">目前進度：Day 5（免費遊戲 RTP 完成，總 RTP 61.27%）</span>
+    <span class="chip">最後更新：2026-11-19</span>
   </div>
 </header>
 
@@ -680,6 +680,150 @@ q = 3/30 = 0.1（每軸 1 個 S，3 個停止位置看得到）
   J 貢獻 12.29% → 5.25%     RTP 56.29% → 49.25%
   命中頻率 51.68% → 47.63%（1 in 2.10）</pre>
   <div class="trap"><strong>陷阱：加新符號後，舊的查表公式會出 #N/A</strong>Window 表頭只有 8 個一般符號，Hit 表候選符號是 S 時 MATCH 找不到 → #N/A 一路傳到 INDEX、AND、OR，COUNTIF 默默少數 2,700 列（軸 1 有 3 個停止位置看得到 S × 900），命中頻率被算成 43.72%。修法：<code>=IF(E2="S", FALSE, AND(…))</code>。不用 IFERROR，因為它會把所有錯誤（例如表頭空格）都吞掉；IF 只排除已知情況，意外錯誤仍看得到。</div>
+  <div class="key"><strong>為什麼加 S 後命中頻率下降（51.68% → 47.63%）</strong>兩個原因：(1) S 取代 J，每軸 J 從 5 個變 4 個，J 的連線機會變少；(2) S 不能連線，軸 1 視窗有一格是 S 時，候選符號少一個。</div>
+  <h3>Scatter 派彩與 RTP 貢獻</h3>
+  <p>Scatter 付<strong>總押注的倍數</strong> mₖ，所以 RTP 貢獻直接是機率乘倍數（押注約掉）：</p>
+  <pre class="math">RTP_scatter = Σ P(k) · mₖ        （k = 3, 4, 5）
+
+決定：3 / 4 / 5 個 S 付 2× / 10× / 50× 押注
+config 存點數（押注 50）：100 / 500 / 2,500 點
+
+  k   P(k)      mₖ    P(k)·mₖ
+  3   0.0081     2    0.0162
+  4   0.00045   10    0.0045
+  5   0.00001   50    0.0005
+                      ------
+              Scatter RTP = 2.12%
+
+主遊戲 49.25% + Scatter 2.12% = 總 RTP 51.37%（免費遊戲還沒加）</pre>
+  <h3>Excel：Scatter 工作表</h3>
+  <p>新增 Power Query 查詢 <code>ScatterPay</code>（讀 game.json 的 <code>scatter.pays</code>，欄 K、Pay），載入到 <code>Scatter</code> 工作表。</p>
+  <pre class="math">q_i  = COUNTIF(Reels[Reel i], "S") * 3 / COUNTA(Reels[Reel i])   （H2:L2，M2 檢查 5 軸 q 相同）
+P(k) = BINOM.DIST(k, 5, $H$2, FALSE)                               （D 欄）
+Mult = Pay / INDEX(Config[Bet], 1)                                  （E 欄）
+RTP  = P(k) × Mult，F5 加總；F6 = Ways!L23；F7 = 總 RTP</pre>
+  <ul>
+    <li><strong>×3 的意思：</strong>1 個 S 會被 3 個停止位置看到（S 在視窗上、中、下各一次）。</li>
+    <li><strong>COUNTA</strong>：非空白格子數 = 軸長 L。不寫死 30，改捲軸長度時公式不用動。</li>
+    <li><strong>INDEX(Config[Bet], 1)</strong>：押注只存在 game.json 一處，重新整理就同步。</li>
+    <li><strong>$H$2</strong>：往下拖時 k 要變（A2→A3），q 不能變，所以要鎖住。</li>
+  </ul>
+  <h3>BINOM.DIST 與「反面」技巧</h3>
+  <pre class="math">BINOM.DIST(k, n, p, FALSE) = P(X = k)      剛好 k 個
+BINOM.DIST(k, n, p, TRUE)  = P(X ≤ k)      最多 k 個（從 0 累加）
+
+P(X ≥ 3) = 1 − P(X ≤ 2) = 1 − BINOM.DIST(2, 5, 0.1, TRUE) = 1 − 0.99144 = 0.00856
+同一招：100 轉內至少觸發一次 = 1 − (1 − p)^100</pre>
+  <div class="trap"><strong>陷阱：BINOM.DIST(3, 5, 0.1, TRUE) 不是「至少 3 個」</strong>它是 P(X ≤ 3) = 0.99954，幾乎等於 1，和「約 117 轉觸發一次」對不起來，這就是抓錯的訊號。</div>
+  <h3>q = 3c/L 的前提：同符號間距 ≥ 3</h3>
+  <pre class="math">一軸 2 個 S，在第 5、7 格（間距 2）：
+  看得到第 5 格的停止位置：3, 4, 5
+  看得到第 7 格的停止位置：5, 6, 7      ← 停止位置 5 的視窗 5,6,7 兩個都看到
+  3c = 6，但實際只有 3,4,5,6,7 共 5 個 → q = 5/30，不是 6/30
+3c/L 其實是 E[視窗內 S 個數]；只有間距 ≥ 視窗高度時才等於 P(至少 1 個)</pre>
+  <h3>各軸 q 不同：Poisson 二項分布</h3>
+  <p>二項分布要求每次試驗成功機率都一樣。各軸 q 不同時不能用 BINOM.DIST，改用全機率法則，一軸一軸拆「有 S／沒 S」。</p>
+  <pre class="math">例：軸 1–4 q = 0.1，軸 5 q = 0.2，求 P(剛好 3 個)
+  軸 5 有 S（0.2）：前 4 軸剛好 2 個 = 0.2 × C(4,2)·0.1²·0.9² = 0.00972
+  軸 5 沒 S（0.8）：前 4 軸剛好 3 個 = 0.8 × C(4,3)·0.1³·0.9  = 0.00288
+  P(剛好 3 個) = 0.0126
+Python：dist = np.convolve(dist, [1 − q_i, q_i]) 逐軸做，不用假設 q 相同</pre>
+  <h3>暖身：E[X] 和 P(X ≥ 1) 的差別（指示變數）</h3>
+  <pre class="math">軸 1 的 S 在第 5、7 格，L = 30
+X = I₅ + I₇     I₅ = 第 5 格那顆 S 在視窗內，I₇ 同理
+E[I₅] = P(p ∈ {3,4,5}) = 3/30，E[I₇] = P(p ∈ {5,6,7}) = 3/30
+E[X] = 6/30 = 0.2           （線性性質，不需要獨立或互斥）
+
+P(X=1) = 4/30（p = 3,4,6,7），P(X=2) = 1/30（p = 5），P(X≥1) = 5/30
+驗算：E[X] = 1×4/30 + 2×1/30 = 6/30 ✔</pre>
+  <div class="trap"><strong>陷阱：5/30 是「至少一個」</strong>要拆成剛好 1 個（4/30）和剛好 2 個（1/30）才能算期望值。這就是 Window 表 Sum 永遠 = 3c、但 N 會變的原因。</div>
+
+  <h3>免費遊戲（Free Game）：三個設計決定</h3>
+  <ul>
+    <li><strong>觸發次數：</strong>3／4／5 個 S 給 10／15／20 次免費轉。</li>
+    <li><strong>倍數：</strong>免費遊戲中所有贏分 ×2（含 Scatter 派彩）。</li>
+    <li><strong>重觸發：</strong>可以，規則同觸發。</li>
+    <li><strong>捲軸：</strong>先用和主遊戲同一套（之後可換專用捲軸調 RTP）。</li>
+  </ul>
+  <pre class="math">game.json：
+"free_game": {
+  "trigger_symbol": "S",
+  "awards": { "3": 10, "4": 15, "5": 20 },
+  "multiplier": 2,
+  "retrigger": true
+}</pre>
+
+  <h3>r：一次轉平均送出幾次免費轉</h3>
+  <pre class="math">Y = 這一轉送出的免費轉次數
+  Y = 0   機率 0.99144
+  Y = 10  機率 0.0081
+  Y = 15  機率 0.00045
+  Y = 20  機率 0.00001
+r = E[Y] = 0.0081×10 + 0.00045×15 + 0.00001×20 = 0.08795
+（結構和 Scatter RTP = Σ P(k)·mₖ 一樣，只是把派彩換成次數）</pre>
+
+  <h3>重觸發的平均總轉數：兩種推導</h3>
+  <pre class="math">方法一：一代一代（等比級數）
+  第 0 代 10、第 1 代 10r、第 2 代 10r²、…、第 n 代 10rⁿ
+  總和 = 10(1 + r + r² + …) = 10/(1−r)       收斂條件 r < 1
+
+方法二：第一步分析（全期望值 + 自我相似）
+  m = 一次免費轉連同子子孫孫平均共幾次
+  沒出 3+ 個 S：1；出 3 個：1 + 10m；出 4 個：1 + 15m；出 5 個：1 + 20m
+  m = 0.99144·1 + 0.0081(1+10m) + 0.00045(1+15m) + 0.00001(1+20m)
+    = 1 + r·m   →   m = 1/(1−r) = 1/0.91205 ≈ 1.0964
+  觸發 10 次 → 平均 10m ≈ 10.96 次</pre>
+  <div class="key"><strong>為什麼新的每一次也平均帶來 m？</strong>每次新的免費轉處境完全相同：同一套捲軸、同樣的重觸發規則、捲軸沒有記憶。m 是「放大係數」：沒有重觸發 m = 1。</div>
+  <div class="trap"><strong>r ≥ 1 會怎樣</strong>期望總轉數無限大；r &gt; 1 時甚至有正機率永遠轉不完（分支過程）。實務上用總免費轉數上限、重觸發次數上限或最大贏分上限防止，加上限後改用有限狀態馬可夫鏈算。</div>
+
+  <h3>條件期望：觸發時平均給幾次</h3>
+  <pre class="math">E[X | A] = Σ x · P(X = x | A) = Σ x · P(X = x 且 A) / P(A)
+骰子例：E[點數 | ≥ 4] = (4 + 5 + 6)/3 = 5
+
+E[初始次數 | 觸發] = (0.0081×10 + 0.00045×15 + 0.00001×20) / 0.00856
+                  = r / P(觸發) = 0.08795 / 0.00856 ≈ 10.27
+
+為什麼分子是原本的期望值：沒觸發時 Y = 0
+  E[Y] = P(觸發)·E[Y|觸發] + P(沒觸發)·0   →   E[Y|觸發] = E[Y]/P(觸發)
+次數直觀：1,000,000 轉 → 觸發 8,560 次、共給 87,950 次 → 每次觸發 10.27 次</pre>
+
+  <h3>免費遊戲的 RTP 貢獻</h3>
+  <pre class="math">RTP_spin = 一次普通轉平均贏幾倍押注 = 主遊戲連線 + Scatter = 49.25% + 2.12% = 51.37%
+RTP_FG   = 主遊戲每轉（付 1 次押注）平均從免費遊戲贏回幾倍押注
+
+RTP_FG = P(觸發) × E[初始|觸發] × m × 倍數 × RTP_spin
+       = r × 1/(1−r) × 2 × RTP_spin
+       = r/(1−r) × 2 × RTP_spin
+       = 0.0964 次 × 1.0274 倍 ≈ 9.91%
+
+1,000,000 轉：× 0.00856 → 8,560 次觸發 → × 10.27 → 87,950 次初始
+             → × 1.0964 → 96,430 次實際 → × 1.0274 → 99,070 倍押注 → ÷ 1,000,000 = 9.91%
+
+總 RTP = 49.25% + 2.12% + 9.91% = 61.27%</pre>
+  <ul>
+    <li><strong>r/(1−r)：</strong>主遊戲每轉平均帶來幾次免費轉（含重觸發）。</li>
+    <li><strong>為什麼可以把「平均」相乘：</strong>E[總和] = E[次數] × E[每次的量]（Wald 等式），條件是每次的量和次數無關；捲軸沒記憶，成立。</li>
+    <li><strong>單位：</strong>前面的數都是「次數」，乘 RTP_spin 才變成「錢」（倍押注）。</li>
+    <li>RTP_spin 能直接用主遊戲的值，是因為免費遊戲用<strong>同一套捲軸</strong>；換專用捲軸就要另算。</li>
+  </ul>
+
+  <h3>Excel：FreeGame 工作表</h3>
+  <p>新增 Power Query <code>FGAwards</code>（讀 <code>free_game.awards</code>，欄 K、Spins）；<code>Config</code> 查詢加欄 <code>FGMult</code>。</p>
+  <pre class="math">C  P(k)      = BINOM.DIST(A2, 5, Scatter!$H$2, FALSE)
+D  P×Spins   = C2*B2
+G2 P(trigger) = SUM(C2:C4)            0.00856
+G3 r          = SUM(D2:D4)            0.08795
+G4 E[init|trig] = G3/G2               10.27
+G5 m          = 1/(1-G3)              1.0964
+G6 Multiplier = INDEX(Config[FGMult], 1)   2
+G7 RTP_spin   = Scatter!F7            51.37%
+G8 RTP_FG     = G3*G5*G6*G7           9.91%
+G9 Total RTP  = G7+G8                 61.27%</pre>
+  <ul>
+    <li>G8 用 G3 而不是 G2×G4：兩者相等（r = P(觸發) × E[初始|觸發]），較短。</li>
+    <li>G7 用引用而不寫死 0.5137：改捲軸、賠率、Bet 時會自動連動。</li>
+    <li>Power Query「重複」（Duplicate）才會產生新查詢；「複製」只是剪貼簿。改完要按「完成」，否則修改會遺失。</li>
+  </ul>
 </section>
 
 <!-- 15 -->
@@ -775,8 +919,27 @@ q = 3/30 = 0.1（每軸 1 個 S，3 個停止位置看得到）
     <div class="ans">一般符號要從軸 1 連下去，用 Sum × Sum × Sum × N × L；Scatter 只數畫面上的個數，各軸獨立且 q 相同時 X ~ Binomial(5, q)。q = 3/30 = 0.1，P(X ≥ 3) = 0.0081 + 0.00045 + 0.00001 = 0.00856，平均 1/0.00856 ≈ 117 轉（幾何分布）。</div>
   </details>
   <details class="qa">
+    <summary>Scatter 付 2×/10×/50× 押注，每軸 q = 0.1，Scatter 的 RTP 貢獻多少？怎麼用一個 BINOM.DIST 算觸發機率？</summary>
+    <div class="ans">RTP = Σ P(k)·mₖ = 0.0081×2 + 0.00045×10 + 0.00001×50 = 2.12%（付押注倍數，押注約掉）。觸發機率 P(X ≥ 3) = 1 − BINOM.DIST(2, 5, 0.1, TRUE) = 0.00856；用 TRUE 是 P(X ≤ k)，所以要用反面。</div>
+  </details>
+  <details class="qa">
+    <summary>各軸 Scatter 機率不同時，還能用二項分布嗎？</summary>
+    <div class="ans">不能，二項分布要求每次成功機率相同。改用全機率法則逐軸拆「有 S／沒 S」（Poisson 二項分布），程式上就是逐軸 convolve [1−qᵢ, qᵢ]。另外 qᵢ = 3cᵢ/Lᵢ 本身也要求同軸 S 間距 ≥ 3，否則重疊的停止位置會被重複計算。</div>
+  </details>
+  <details class="qa">
     <summary>Wild 為什麼通常不代替 Scatter？</summary>
     <div class="ans">代替的話，觸發機率大增，而且軸 1（沒有 W）和軸 2–5 的 q 不同，不再是二項分布。更重要的是觸發率會被 W 綁住：調 W 來改主遊戲 RTP，會連帶改到免費遊戲。不代替就能分開調整。</div>
+  <details class="qa">
+    <summary>用兩種方法推導含重觸發的免費遊戲平均轉數（觸發 10 次，每次免費轉平均送 r 次）。</summary>
+    <div class="ans">等比級數：10 + 10r + 10r² + … = 10/(1−r)，需 r &lt; 1。第一步分析：m = 1 + r·m（自己 1 次，平均生出 r 次、每次又帶來 m 次），m = 1/(1−r)，總數 10m。本遊戲 r = 0.08795，10m ≈ 10.96。</div>
+  </details>
+  <details class="qa">
+    <summary>重觸發改成每次只送 5 次，公式怎麼改？r = 1.2 會怎樣？</summary>
+    <div class="ans">r = 5 × P(≥3) = 5 × 0.00856 = 0.0428，總數 10/(1−r) ≈ 10.45。r ≥ 1 時級數不收斂、期望值無限大，r &gt; 1 還有正機率永遠轉不完；實務用免費轉總數上限、重觸發次數上限、最大贏分上限防止。</div>
+  </details>
+  <details class="qa">
+    <summary>免費遊戲對 RTP 的貢獻怎麼算？</summary>
+    <div class="ans">RTP_FG = P(觸發) × E[初始|觸發] × 1/(1−r) × 倍數 × RTP_spin = r/(1−r) × 倍數 × RTP_spin。本遊戲 0.0964 × 2 × 51.37% ≈ 9.91%。相乘成立靠 Wald 等式（每轉贏分和轉數無關）；RTP_spin 能沿用主遊戲是因為同一套捲軸。</div>
   </details>
 </section>
 
@@ -794,6 +957,8 @@ q = 3/30 = 0.1（每軸 1 個 S，3 個停止位置看得到）
 <section class="card" id="log">
   <h2><span class="num">17</span>更新紀錄</h2>
   <ul class="log">
+    <li><time datetime="2026-11-19">2026-11-19</time>第 14 節新增：指示變數暖身題（E[X] vs P(X≥1)）、免費遊戲三個設計決定、r、重觸發兩種推導（等比級數／第一步分析）、條件期望、RTP_FG 公式與 Wald 等式、Excel FreeGame 工作表；總 RTP 61.27%；面試問答新增 3 題。</li>
+    <li><time datetime="2026-11-18">2026-11-18</time>第 14 節新增：命中頻率下降的兩個原因、Scatter 派彩與 RTP 貢獻（2.12%）、Excel Scatter 工作表公式、BINOM.DIST 與反面技巧、3c/L 前提、Poisson 二項分布；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-17">2026-11-17</time>第 14 節新增 Scatter：定義、二項分布觸發機率、三個設計決定、加 S 後 RTP 與命中頻率、#N/A 陷阱（IF vs IFERROR）；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-17">2026-11-17</time>第 14 節新增命中頻率：不互斥、只看前 3 軸、中獎規則、Excel Hit 表（30 進位、INDEX 二維、MATCH、AND/OR、混合參照）、結果 51.68%、RTP ÷ 命中頻率與 LDW；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-16">2026-11-16</time>第 14 節新增名詞整理：軸、格、停止位置、視窗上中下、Excel 列、INDEX 的第幾列，與換算公式。</li>
