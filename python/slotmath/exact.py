@@ -129,3 +129,29 @@ def payout_distribution(wins, bet, edges):
         result.append((f"{lo}-{hi}", p))
     result.append((f">{edges[-1]}", (x > edges[-1]).mean()))
     return result
+
+
+def total_moments(config):
+    """Exact mean, variance and sd of the total win per base spin (in multiples of bet),
+    including free games with retriggers (first-step analysis).
+
+    X = base-board win, A = free spins awarded, Z = one free spin plus all its descendants.
+    """
+    bet = config["bet"]
+    mult = config["free_game"]["multiplier"]
+    wins = all_board_wins(config)
+    A = all_board_awards(config)
+    n = wins.size
+
+    ex = wins.sum() / n / bet
+    ex2 = (wins**2).sum() / n / bet**2
+    r = A.sum() / n                            # E[A]
+    exa = (wins * A).sum() / n / bet           # E[XA]
+    eaa1 = (A * (A - 1)).sum() / n             # E[A(A-1)]
+
+    ez = mult * ex / (1 - r)
+    ez2 = (mult**2 * ex2 + 2 * mult * exa * ez + eaa1 * ez**2) / (1 - r)
+    et = ex + r * ez
+    et2 = ex2 + 2 * exa * ez + r * ez2 + eaa1 * ez**2
+    var = et2 - et**2
+    return et, var, np.sqrt(var)
