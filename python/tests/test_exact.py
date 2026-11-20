@@ -1,9 +1,11 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 
+from sim.simulate import simulate_spins
 from slotmath.exact import (all_board_wins, board_win, load_config, symbol_win,
-                            window_counts)
+                            total_moments, window_counts)
 
 CONFIG = Path(__file__).resolve().parents[2] / "config" / "game.json"
 
@@ -90,3 +92,29 @@ def test_max_win_over_all_boards(all_wins):
 def test_base_rtp_regression(all_wins):
     # total points over all 30^5 boards; RTP 0.5136737 cross-checked with Excel Scatter!F7
     assert all_wins.sum() == 624_113_505
+
+
+def test_window_counts_wraps_around(game):
+    # reel 2, stop 29: window = cells 29, 0, 1 = H3, J, T (wraps to the start)
+    config, _, _ = game
+    symbols = list(config["paytable"])          # H1 H2 H3 A K Q J T
+    counts = window_counts(config["reels"][1], symbols)
+    assert list(counts[29]) == [0, 0, 1, 0, 0, 0, 1, 1]
+
+
+def test_window_counts_wild_adds_to_every_symbol(game):
+    # reel 2, stop 4: window = A, W, S; W counts as every symbol, S is not a line symbol
+    config, _, _ = game
+    symbols = list(config["paytable"])          # H1 H2 H3 A K Q J T
+    counts = window_counts(config["reels"][1], symbols, wild="W")
+    assert list(counts[4]) == [1, 1, 1, 2, 1, 1, 1, 1]
+
+
+def test_simulation_matches_theory(game):
+    # total RTP by first-step analysis must lie within 4 sd/sqrt(N) of the simulated mean;
+    # a correct program fails about 1 in 15,800 seeds (fixed seed -> deterministic)
+    config, _, _ = game
+    n = 1_000_000
+    x = simulate_spins(config, n, seed=2026) / config["bet"]
+    rtp, _, sd = total_moments(config)
+    assert abs(x.mean() - rtp) < 4 * sd / np.sqrt(n)
