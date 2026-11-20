@@ -144,8 +144,8 @@ details.qa .ans { color: var(--ink); padding: 6px 0 0 4px; }
   <h1>機率工程師轉職筆記</h1>
   <p>slot-math-portfolio 的觀念整理。每完成一個段落就補上新的一節，複習時先看「重點」和「陷阱」，再自己把面試問答答一遍。</p>
   <div class="meta">
-    <span class="chip">目前進度：Day 6（主遊戲變異數完成，下一步免費遊戲變異數）</span>
-    <span class="chip">最後更新：2026-11-20</span>
+    <span class="chip">目前進度：Day 6 完成（PAR Sheet v1），下一步 Day 7</span>
+    <span class="chip">最後更新：2026-11-21</span>
   </div>
 </header>
 
@@ -867,6 +867,31 @@ moments(wins, bet)                        E[X]、Var、σ</pre>
      [0,4,7,4,3] = 2500（5 個 S）、RTP 0.5136737 = Excel Scatter!F7、隨機 2,000 盤與 board_win 0 不一致
 結果（主遊戲 + Scatter，不含免費遊戲）：E[X] = 0.51367，Var = 1.5766，σ = 1.2556；最大贏分 2,500 點 = 50 倍</pre>
   <div class="trap"><strong>Python 縮排就是語法</strong>函式第一行內容縮幾格，整個函式就必須是幾格；多一格會 IndentationError。C# 靠大括號，縮排只是好看。</div>
+  <h3>Day 6 收尾：免費遊戲、模擬、PAR Sheet v1（Volatility 工作表）</h3>
+  <p class="src">數學推導在《數學複習筆記》第 11–13 節，這裡只記程式與 Excel。</p>
+<pre class="math">exact.py 新增
+  expand(arr, axis)            從 all_board_wins 裡搬到模組層級，大家共用
+  all_board_awards(config)     每盤送幾次免費轉：awards = [0,0,0,10,15,20]，awards[n_scatter]
+  payout_distribution(wins, bet, edges)   布林陣列的平均 = 機率；zip(edges[:-1], edges[1:]) 配對 (lo, hi]
+  total_moments(config)        含免費遊戲的 E[T]、Var(T)、σ（第一步分析公式）
+
+sim/simulate.py：simulate_spins(config, n, seed)
+  wins、awards .ravel() 攤平 → 抽 index = 抽盤面（30 進位一對一 → 每軸均勻獨立）
+  pending = 每位玩家還欠幾次免費轉；每輪只讓 pending &gt; 0 的人整批抽一次
+  pending[k] += awards[j] − 1（轉掉 1 次、重觸發再加）；全程整數點數
+
+sim/export_par.py：python -m sim.export_par（在 python/ 資料夾執行）
+  → excel/data/par_stats.csv（Metric, Value）、par_dist.csv（Interval, P_Base, P_Total, P_Total_Err）
+
+Excel Volatility 工作表（Power Query：資料 → 從文字/CSV → 轉換資料 → 改名 → 關閉並載入至…）
+  A1  表格 ParStats            D1  表格 ParDist（載入至「目前工作表」=Volatility!$D$1）
+  I   N = 1,000／10,000／1,000,000
+  J   =INDEX(ParStats[Value], MATCH("VI", ParStats[Metric], 0)) / SQRT(I2)
+  K   =INDEX(ParStats[Value], MATCH("RTP_Total", ParStats[Metric], 0)) - J2
+  L   =INDEX(ParStats[Value], MATCH("RTP_Total", ParStats[Metric], 0)) + J2</pre>
+  <div class="trap"><strong>CSV 的 "1-5" 會被 Excel 當成日期</strong>區間標籤改用 (1,5]。資料進 Excel 前要想：這個字串長得像日期或數字嗎？</div>
+  <div class="key"><strong>用名字查，不寫死 B8</strong>重跑 Python 後 CSV 列順序可能變，INDEX + MATCH 永遠拿對的值；寫死儲存格會默默拿錯。表格欄位往下拉不會動，所以這次不用 $。</div>
+  <div class="key"><strong>更新流程</strong>改 game.json → 跑 python -m sim.export_par → Excel「資料 → 全部重新整理」。</div>
 </section>
 
 <!-- 15 -->
@@ -1007,6 +1032,7 @@ moments(wins, bet)                        E[X]、Var、σ</pre>
 <section class="card" id="log">
   <h2><span class="num">17</span>更新紀錄</h2>
   <ul class="log">
+    <li><time datetime="2026-11-21">2026-11-21</time>Day 6 完成：all_board_awards、payout_distribution、total_moments、simulate.py、export_par.py；Excel Volatility 工作表（ParStats、ParDist、VI 區間）。</li>
     <li><time datetime="2026-11-20">2026-11-20</time>第 14 節新增：變異數與標準差（兩個練習）、交叉項陷阱、Python exact.py 六個函式（廣播、reshape、np.where、查表索引、整數先加總）、主遊戲 σ = 1.2556；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-19">2026-11-19</time>第 14 節新增：指示變數暖身題（E[X] vs P(X≥1)）、免費遊戲三個設計決定、r、重觸發兩種推導（等比級數／第一步分析）、條件期望、RTP_FG 公式與 Wald 等式、Excel FreeGame 工作表；總 RTP 61.27%；面試問答新增 3 題。</li>
     <li><time datetime="2026-11-18">2026-11-18</time>第 14 節新增：命中頻率下降的兩個原因、Scatter 派彩與 RTP 貢獻（2.12%）、Excel Scatter 工作表公式、BINOM.DIST 與反面技巧、3c/L 前提、Poisson 二項分布；面試問答新增 2 題。</li>

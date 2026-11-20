@@ -71,7 +71,7 @@ slot-math-portfolio/
 - [x] Day 3　Lines／Ways、賠率表；Excel 建捲軸、算各獎項組合數
 - [x] Day 4　Excel：Wild、Scatter、主遊戲 RTP、命中頻率
 - [x] Day 5　Excel：免費遊戲、重觸發 1/(1−r)、總 RTP
-- [ ] Day 6　Excel：變異數、波動度指數、派彩區間分佈（樞紐分析表）、信賴區間 → PAR Sheet v1
+- [x] Day 6　Excel：變異數、波動度指數、派彩區間分佈（樞紐分析表）、信賴區間 → PAR Sheet v1
 - [ ] Day 7　Python 結算邏輯：讀 JSON、單盤面結算、整數計算
 - [ ] Day 8　NumPy 模擬 1,000 萬轉；Pandas 理論值與模擬值對照表
 - [ ] Day 9　pytest、GitHub、README
@@ -108,6 +108,8 @@ slot-math-portfolio/
 ## 進度紀錄
 
 （每次工作結束時由 Claude 更新，最新的放最上面）
+
+- 2026-11-21：**Day 6 完成 → PAR Sheet v1。** commit 1925419（exact.py、simulate.py、兩份筆記、Excel；commit 前 Claude 清掉 exact.py 行尾空白／空白行、補檔尾換行）。勝選 (a) Python → CSV → Power Query，並請 Claude 寫 Python：`exact.py` 新增 `total_moments(config)`（第一步分析公式，係數用 config 的 multiplier）、`python/sim/export_par.py`（`python -m sim.export_par`，輸出 `excel/data/par_stats.csv` 14 個指標、`par_dist.csv` 6 區間；區間標籤用 `(1,5]`，因 "1-5" 會被 Excel 當日期）。勝做 Excel：Power Query 讀兩個 CSV → `Volatility` 工作表（表格 ParStats A1:B15、ParDist D1:G7；「匯入資料」視窗不會選，Claude 圖解：表格／目前工作表／=Volatility!$D$1）；勝說「教我」→ Claude 給 J `=INDEX(ParStats[Value], MATCH("VI", ParStats[Metric], 0)) / SQRT(I2)`、K/L = RTP_Total ∓ J，N = 1,000／10,000／1,000,000 → [48.70%, 73.85%]、[57.30%, 65.25%]、[60.88%, 61.67%]，openpyxl 驗收 ✓（K、L 尚未設百分比格式）。理解題：N ×1000 → 半寬 1/31.6，勝答對（半寬 ∝ 1/√N）✓。轉職筆記新增「Day 6 收尾」小節並重新發布。更新流程：改 game.json → `python -m sim.export_par` → Excel 全部重新整理。**下次從 Day 7 開始**：Day 7 原計畫（讀 JSON、單盤面結算、整數計算）大多已在 exact.py 完成 → 先跟勝確認 Day 7 改做什麼（建議：補 `retrigger` 開關、把 board_win 整理成正式結算函式並開始寫 pytest 邊界案例：全 Wild、Scatter 剛好 3 個、最大贏分盤面），以及何時把總 RTP 調到 ~96%（建議 Day 7–8 之間，調完重跑 export 即可更新 PAR Sheet）。
 
 - 2026-11-20（晚）～21：**Day 6 派彩區間分佈完成。** 概念（勝說「教我」）：同 RTP、同 σ 的遊戲 A（50% 0／50% 2）與 B（90% 0.667／10% 4）手感不同；勝答 B 命中 100%、LDW 90% ✓，調整方向答「LDW 增加」（Claude 補：中間獎 ↓、大獎更稀有更大以維持 RTP、σ）。`exact.py` 新增 `payout_distribution(wins, bet, edges)`（Claude 逐段講＋勝要求「用圖解釋」→ 10 盤玩具例圖解布林陣列、zip、(lo, hi]；勝貼上）：主遊戲 0 51.83%（≤ 1 − 47.63%，差 = 只有 Scatter 派彩的盤面）、0-1 33.78%、1-5 13.03%、5-20 1.35%、20-100 0.0085%、>100 0，加總 1 ✓。勝說「教我」→ P(LDW | 中獎) ≈ 70%；加免費遊戲後「0」「0-1」不變（觸發盤面必有 Scatter 派彩）、其餘往右搬、>100 出現；不能窮舉 → 模擬。**`python/sim/simulate.py` 的 `simulate_spins(config, n, seed)` 由 Claude 寫**（勝說「你幫我寫，現在在幹嘛」— 勝對整體方向迷失，Claude 用 PAR Sheet 清單說明目前位置）：攤平 wins／awards 抽 index、pending 一輪一輪向量化重觸發、整數點數；100 萬轉 seed 2026：RTP 0.61239 CI [0.60841, 0.61638] ∋ 0.61274 ✓、sd 2.0333 ✓、0 51.88%、0-1 33.81%（與窮舉在誤差內）、1-5 12.27%、5-20 1.84%、20-100 0.19%、>100 2 次、最大 109.6 倍。未接 `retrigger` 開關。exact.py 小整理待勝做：第 57、96 行行尾空白、第 76 行整行空白、檔尾缺換行。數學複習筆記已更新。教學注意：勝累了或迷失時，先給「整體地圖」再進細節。**exact.py、sim/、notes、CLAUDE.md、excel 尚未 commit。下次從 Day 6 最後一步開始：把 σ、VI、95% 區間、派彩區間分佈（主遊戲窮舉＋含免費遊戲模擬）寫進 Excel → PAR Sheet v1**（Python 輸出 CSV 再由 Power Query 讀，或 Claude 用 COM 寫入；先讓勝決定），之後 pytest。總 RTP 調到 ~96% 的時機也要決定。
 
