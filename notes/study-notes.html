@@ -906,7 +906,13 @@ assert 條件, "訊息"     ✓        assert (條件, "訊息")  ✗ tuple 永�
 測試清單（10 個）
   symbol_win  3 連 20、4 連 180、5 連 400、軸 1 沒有 0、軸 3 斷掉 0
   board_win   Scatter 剛好 3 個 [0,0,4,3,2] = 100、剛好 2 個 [0,0,4,0,2] = 0、5 個 S [0,4,7,4,3] = 2500
-  全部盤面     max = 2500 且剛好 3⁵ = 243 盤、總點數 624,113,505（RTP 0.5136737 = Excel Scatter!F7）</pre>
+  window_counts 軸 2 停在 29 → 格 29、0、1 = H3 J T → [0,0,1,0,0,0,1,1]（頭尾相接 (p + k) % L）
+               軸 2 停在 4 → A W S，wild="W" → [1,1,1,2,1,1,1,1]（W 加到每個符號；+= 寫成 = 會被抓到）
+  全部盤面     max = 2500 且剛好 3⁵ = 243 盤、總點數 624,113,505（RTP 0.5136737 = Excel Scatter!F7）
+  理論 vs 模擬  |simulate_spins 平均 − total_moments RTP| &lt; 4σ/√N（N = 100 萬、seed 2026）
+共 13 個，約 3 秒</pre>
+  <div class="key"><strong>隨機測試：固定 seed + 4σ</strong>用 95% 區間 → 正確的程式每 20 次失敗 1 次（flaky test，紅燈沒人理）。固定 seed 讓結果可重現；4σ 讓失敗機率降到約 1/15,800。代價是只抓得到 ≥ 0.8% 的偏差，精確部分交給總點數迴歸測試。</div>
+  <div class="key"><strong>只有模擬測試碰得到免費遊戲</strong>假設忘了 ×2：模擬 RTP 0.5632 vs 理論 0.6127，差 0.050 &gt; 0.008 → 失敗；其他 12 個測試全部照樣通過。理論與模擬並排 = 面試題 8 的答案。</div>
   <div class="key"><strong>期望值要手算</strong>從程式輸出抄來的期望值，程式錯了測試也跟著錯。例外：已經被另一種方法獨立驗證過的數字（例如 Excel 對過的總點數），可以當迴歸測試鎖住。</div>
   <div class="key"><strong>邊界 = 規則交界</strong>結果突然改變的那條線（2 個 S／3 個 S、x 剛好 = 1、停止位置 29 繞回 0）。&lt; 和 &lt;=、從 0 還是 1 數的錯都在這裡；交界兩側都要測。</div>
   <div class="key"><strong>突變測試（mutation testing）</strong>故意改壞程式看測試抓不抓得到：c[3] == 0 改成 == 1 → 3 連、5 連失敗；4 連因 c[3] = 3 兩種寫法同路而通過。測試數字不要挑 1（乘 1 看不出漏乘）。</div>
@@ -1054,7 +1060,7 @@ Python 停止位置從 0 數：stops = 0 是 Excel Window 表的停止位置 1</
 <section class="card" id="log">
   <h2><span class="num">17</span>更新紀錄</h2>
   <ul class="log">
-    <li><time datetime="2026-11-21">2026-11-21</time>Day 7：pytest 入門（assert、fixture、邊界、突變測試、迴歸測試），10 個測試。</li>
+    <li><time datetime="2026-11-21">2026-11-21</time>Day 7：pytest 入門（assert、fixture、邊界、突變測試、迴歸測試、固定 seed + 4σ 的模擬測試），13 個測試。</li>
     <li><time datetime="2026-11-21">2026-11-21</time>Day 6 完成：all_board_awards、payout_distribution、total_moments、simulate.py、export_par.py；Excel Volatility 工作表（ParStats、ParDist、VI 區間）。</li>
     <li><time datetime="2026-11-20">2026-11-20</time>第 14 節新增：變異數與標準差（兩個練習）、交叉項陷阱、Python exact.py 六個函式（廣播、reshape、np.where、查表索引、整數先加總）、主遊戲 σ = 1.2556；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-19">2026-11-19</time>第 14 節新增：指示變數暖身題（E[X] vs P(X≥1)）、免費遊戲三個設計決定、r、重觸發兩種推導（等比級數／第一步分析）、條件期望、RTP_FG 公式與 Wald 等式、Excel FreeGame 工作表；總 RTP 61.27%；面試問答新增 3 題。</li>

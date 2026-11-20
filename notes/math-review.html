@@ -660,6 +660,8 @@ Q2：VI = 10 和 VI = 2，要 ±1% 的精度
     <div class="ans">會。兩個數字描述不了形狀：例如 50% 贏 0／50% 贏 2，和 90% 贏 0.667／10% 贏 4，平均和變異數都是 1，但後者命中 100%、90% 是 LDW。要看派彩區間分佈。</div></details>
   <details class="qa"><summary>派彩區間分佈為什麼加免費遊戲後要用模擬？</summary>
     <div class="ans">平均和變異數可以用第一步分析的公式避開窮舉，但整張分布沒有捷徑；10 次免費轉就有 (30⁵)¹⁰ 種組合，重觸發還沒有上限。模擬 N 次數比例，每列附 p̂ ± 1.96√(p̂(1−p̂)/N)。</div></details>
+  <details class="qa"><summary>模擬測試為什麼不用 95% 區間當通過標準？</summary>
+    <div class="ans">正確的程式也有 5% 機率落在區間外，每 20 次誤報 1 次（flaky）。固定 seed 讓結果可重現，再放寬到 4σ/√N（誤報約 1/15,800）；精確度交給窮舉的迴歸測試。</div></details>
   <details class="qa"><summary>高波動遊戲為什麼要跑更多模擬轉數？</summary>
     <div class="ans">要 ±e 的精度需要 N ≥ (VI/e)²，轉數跟變異數成正比。VI 大 5 倍，轉數要 25 倍。</div></details>
   <details class="qa"><summary>X 和 A 的共變異數是正還是負？為什麼？</summary>
