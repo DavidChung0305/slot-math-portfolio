@@ -144,8 +144,8 @@ details.qa .ans { color: var(--ink); padding: 6px 0 0 4px; }
   <h1>機率工程師轉職筆記</h1>
   <p>slot-math-portfolio 的觀念整理。每完成一個段落就補上新的一節，複習時先看「重點」和「陷阱」，再自己把面試問答答一遍。</p>
   <div class="meta">
-    <span class="chip">目前進度：Day 5（免費遊戲 RTP 完成，總 RTP 61.27%）</span>
-    <span class="chip">最後更新：2026-11-19</span>
+    <span class="chip">目前進度：Day 6（主遊戲變異數完成，下一步免費遊戲變異數）</span>
+    <span class="chip">最後更新：2026-11-20</span>
   </div>
 </header>
 
@@ -824,6 +824,49 @@ G9 Total RTP  = G7+G8                 61.27%</pre>
     <li>G7 用引用而不寫死 0.5137：改捲軸、賠率、Bet 時會自動連動。</li>
     <li>Power Query「重複」（Duplicate）才會產生新查詢；「複製」只是剪貼簿。改完要按「完成」，否則修改會遺失。</li>
   </ul>
+  <h3>變異數與標準差</h3>
+  <pre class="math">Var(X) = E[(X − μ)²]            離平均的距離，平方後取平均（平方才不會正負抵消）
+       = E[X²] − (E[X])²        捷徑：先平方再平均 − 先平均再平方
+σ = √Var                         單位變回「倍押注」
+
+四步驟：E[X] → E[X²] → 相減 → 開根號
+X 用「倍押注」：派彩點數 ÷ 押注
+
+練習 1：派彩 0/20/0/5，押 10 → X = 0/2/0/0.5
+  E[X] = 0.625，E[X²] = 1.0625，Var = 0.671875，σ ≈ 0.82
+練習 2：派彩 0/0/10/0/40，押 10 → X = 0/0/1/0/4
+  E[X] = 1，E[X²] = 3.4，Var = 2.4，σ ≈ 1.55     ← 大獎平方後被放大（4² = 16）</pre>
+  <div class="key"><strong>RTP 一樣、σ 可以差很多</strong>σ 大的遊戲中獎少但獎大，玩家資金起伏大、賭場短期風險也大。這是「兩款 RTP 96% 的遊戲差在哪」的答案核心。</div>
+
+  <h3>交叉項陷阱：同一盤面多個符號中獎</h3>
+  <pre class="math">規則：同一符號只算最長；不同符號全部都付、相加（Scatter 也另外加）
+盤面 A 贏 0.2、K 贏 0.6 → X = 0.8，X² = 0.64
+分開平方：0.2² + 0.6² = 0.40      差 0.24 = 2ab（交叉項）
+
+E[X]  = Σ E[X_s]                   ✔ 線性，可以各符號分開算
+E[X²] = Σ E[X_s²] + Σ 2E[X_s·X_t]   ✘ 不能分開，同盤面一起中獎時交叉項 ≠ 0
+→ 必須逐盤面先加總成 X，再平方：30⁵ = 24,300,000 盤，Excel 放不下 → Python</pre>
+
+  <h3>Python：python/slotmath/exact.py</h3>
+  <pre class="math">load_config(path)                         讀 game.json → dict
+window_counts(reel, symbols, rows, wild)  30 × 符號數 的表 = Excel Window 表 M–T 欄
+                                          counts[p, j] = 停在 p 時視窗內第 j 個符號個數（含 W）
+symbol_win(c, pays)                       單符號單盤面 Ways 贏分
+                                          c₄ = 0 → c₁c₂c₃·pay3；c₅ = 0 → c₁c₂c₃c₄·pay4；否則 ·c₅·pay5
+board_win(stops, counts, s_counts, config) 單盤面總贏分 = 8 符號相加 + Scatter（.get(k, 0)）
+all_board_wins(config)                    全部 2,430 萬盤面，5 維陣列，0.6 秒
+moments(wins, bet)                        E[X]、Var、σ</pre>
+  <ul>
+    <li><strong>廣播：</strong>a[:, None] * b[None, :] 得到 ways[p1, p2] = a[p1] × b[p2]，等於兩層巢狀迴圈。<code>:</code> 放在第幾維 = 隨哪一軸的停止位置變化；放同一維只會得到「各軸停同一位置」的 30 盤，而且不報錯。</li>
+    <li><strong>reshape / expand：</strong>30 個數字不變，只換成 5 維地址 c2[0, p, 0, 0, 0]；長度 1 的維度算的時候用 0、會被撐開。</li>
+    <li><strong>np.where(條件, 甲, 乙)：</strong>對每一格分別判斷，等於 C# 的 <code>cond ? a : b</code>。</li>
+    <li><strong>查表陣列 + 花式索引：</strong>scatter_pay = [0,0,0,100,500,2500]，scatter_pay[n_scatter] 每格拿 S 個數去查。</li>
+    <li><strong>整數先加總、最後才除：</strong>E[X²] = Σwᵢ² ÷ N ÷ bet²（常數提到加總外面，分配律）；只做一次浮點除法。</li>
+  </ul>
+  <pre class="math">驗收：shape (30,30,30,30,30)、盤面 [2,3,0,4,7] = 450（K 5 連 4 路 400 + T 借 W 5 連 50）、
+     [0,4,7,4,3] = 2500（5 個 S）、RTP 0.5136737 = Excel Scatter!F7、隨機 2,000 盤與 board_win 0 不一致
+結果（主遊戲 + Scatter，不含免費遊戲）：E[X] = 0.51367，Var = 1.5766，σ = 1.2556；最大贏分 2,500 點 = 50 倍</pre>
+  <div class="trap"><strong>Python 縮排就是語法</strong>函式第一行內容縮幾格，整個函式就必須是幾格；多一格會 IndentationError。C# 靠大括號，縮排只是好看。</div>
 </section>
 
 <!-- 15 -->
@@ -940,6 +983,13 @@ G9 Total RTP  = G7+G8                 61.27%</pre>
   <details class="qa">
     <summary>免費遊戲對 RTP 的貢獻怎麼算？</summary>
     <div class="ans">RTP_FG = P(觸發) × E[初始|觸發] × 1/(1−r) × 倍數 × RTP_spin = r/(1−r) × 倍數 × RTP_spin。本遊戲 0.0964 × 2 × 51.37% ≈ 9.91%。相乘成立靠 Wald 等式（每轉贏分和轉數無關）；RTP_spin 能沿用主遊戲是因為同一套捲軸。</div>
+  <details class="qa">
+    <summary>兩款 RTP 都是 96% 的遊戲差在哪？</summary>
+    <div class="ans">波動度（σ）。Var = E[X²] − E[X]²，大獎平方後被放大，所以獎金集中在少數大獎的遊戲 σ 大：中獎少、起伏大，玩家需要更多資金撐，賭場短期風險也大，需要更多轉才能收斂到 RTP（信賴區間 ± 1.96σ/√N 較寬）。</div>
+  </details>
+  <details class="qa">
+    <summary>Ways 遊戲的變異數能不能各符號分開算再相加？</summary>
+    <div class="ans">不行。期望值是線性的可以拆，但 X² = (Σ X_s)² 有交叉項 2X_sX_t，同盤面多符號一起中獎時不為 0。要逐盤面先加總贏分再平方；本專案用 NumPy 廣播窮舉 30⁵ 盤。</div>
   </details>
 </section>
 
@@ -957,6 +1007,7 @@ G9 Total RTP  = G7+G8                 61.27%</pre>
 <section class="card" id="log">
   <h2><span class="num">17</span>更新紀錄</h2>
   <ul class="log">
+    <li><time datetime="2026-11-20">2026-11-20</time>第 14 節新增：變異數與標準差（兩個練習）、交叉項陷阱、Python exact.py 六個函式（廣播、reshape、np.where、查表索引、整數先加總）、主遊戲 σ = 1.2556；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-19">2026-11-19</time>第 14 節新增：指示變數暖身題（E[X] vs P(X≥1)）、免費遊戲三個設計決定、r、重觸發兩種推導（等比級數／第一步分析）、條件期望、RTP_FG 公式與 Wald 等式、Excel FreeGame 工作表；總 RTP 61.27%；面試問答新增 3 題。</li>
     <li><time datetime="2026-11-18">2026-11-18</time>第 14 節新增：命中頻率下降的兩個原因、Scatter 派彩與 RTP 貢獻（2.12%）、Excel Scatter 工作表公式、BINOM.DIST 與反面技巧、3c/L 前提、Poisson 二項分布；面試問答新增 2 題。</li>
     <li><time datetime="2026-11-17">2026-11-17</time>第 14 節新增 Scatter：定義、二項分布觸發機率、三個設計決定、加 S 後 RTP 與命中頻率、#N/A 陷阱（IF vs IFERROR）；面試問答新增 2 題。</li>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>數學複習筆記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* layout: left index rail + single reading column; each concept is a numbered card keyed to the 20-day plan */
+  --bg: #f4f5f2;
+  --surface: #ffffff;
+  --ink: #1d2523;
+  --muted: #5b6662;
+  --line: #d9ddd8;
+  --accent: #0f6b5c;
+  --accent-soft: #e2f0ec;
+  --warn: #9a4a12;
+  --warn-soft: #fbeee2;
+  --code-bg: #eef1ed;
+  --font-display: "Noto Serif TC", "Songti TC", serif;
+  --font-body: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131917; --surface: #1b2220; --ink: #e3e9e6; --muted: #9aa7a2; --line: #2e3835;
+    --accent: #5cc4ae; --accent-soft: #1c3530; --warn: #f0a46a; --warn-soft: #3a2a1d; --code-bg: #222b28;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131917; --surface: #1b2220; --ink: #e3e9e6; --muted: #9aa7a2; --line: #2e3835;
+  --accent: #5cc4ae; --accent-soft: #1c3530; --warn: #f0a46a; --warn-soft: #3a2a1d; --code-bg: #222b28;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.75;
+}
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap {
+  display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px;
+  max-width: 1080px; margin: 0 auto; padding: 32px 24px 64px;
+}
+nav.index { position: sticky; top: 24px; align-self: start; font-size: 14px; }
+nav.index h2 { font-size: 12px; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; font-weight: 500; }
+nav.index ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.index a { display: block; padding: 4px 8px; border-radius: 6px; text-decoration: none; color: var(--ink); }
+nav.index a:hover { background: var(--accent-soft); }
+nav.index .num { color: var(--muted); font-family: var(--font-mono); font-size: 12px; margin-right: 6px; }
+
+main { max-width: 720px; display: grid; gap: 28px; }
+header.top h1 { font-family: var(--font-display); font-size: 32px; line-height: 1.3; margin: 0 0 8px; text-wrap: balance; }
+header.top p { margin: 0; color: var(--muted); }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+
+section.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 24px 28px; scroll-margin-top: 16px;
+}
+section.card > h2 {
+  font-family: var(--font-display); font-size: 22px; margin: 0 0 4px; text-wrap: balance;
+  display: flex; gap: 12px; align-items: baseline;
+}
+section.card > h2 .num { font-family: var(--font-mono); font-size: 14px; color: var(--accent); }
+.src { font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+h3 { font-size: 16px; margin: 20px 0 6px; }
+p { margin: 8px 0; }
+ul, ol.steps { margin: 8px 0; padding-left: 22px; }
+
+pre.math {
+  font-family: var(--font-mono); font-size: 14px; line-height: 1.7;
+  background: var(--code-bg); border-radius: 8px; padding: 12px 16px; margin: 12px 0;
+  overflow-x: auto; white-space: pre;
+}
+code { font-family: var(--font-mono); font-size: .92em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+
+.tbl { overflow-x: auto; margin: 12px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+th { color: var(--muted); font-weight: 500; }
+td.n { text-align: right; font-family: var(--font-mono); }
+tr.total td { font-weight: 700; border-top: 2px solid var(--ink); }
+
+.key { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+.trap { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+.key strong:first-child, .trap strong:first-child { display: block; font-size: 13px; letter-spacing: .04em; }
+.trap strong:first-child { color: var(--warn); }
+.key strong:first-child { color: var(--accent); }
+
+.board { font-family: var(--font-mono); font-size: 14px; background: var(--code-bg); border-radius: 8px; padding: 12px 16px; overflow-x: auto; white-space: pre; margin: 12px 0; }
+
+details.qa { border-top: 1px solid var(--line); padding: 10px 0; }
+details.qa:last-child { border-bottom: 1px solid var(--line); }
+details.qa summary { cursor: pointer; font-weight: 500; }
+details.qa .ans { color: var(--ink); padding: 6px 0 0 4px; }
+.open-q { color: var(--warn); font-size: 13px; font-weight: 500; }
+
+.log li { margin: 4px 0; }
+.log time { font-family: var(--font-mono); font-size: 13px; color: var(--muted); margin-right: 8px; }
+
+@media (max-width: 820px) {
+  .wrap { grid-template-columns: 1fr; gap: 20px; padding: 20px 16px 48px; }
+  nav.index { position: static; }
+  section.card { padding: 20px 18px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="index" aria-label="目錄">
+  <h2>目錄</h2>
+  <ol>
+    <li><a href="#sample"><span class="num">01</span>樣本空間與等機率</a></li>
+    <li><a href="#count"><span class="num">02</span>計數</a></li>
+    <li><a href="#expect"><span class="num">03</span>期望值與線性</a></li>
+    <li><a href="#indep"><span class="num">04</span>獨立與同分布</a></li>
+    <li><a href="#gap"><span class="num">05</span>看不到的機率 N</a></li>
+    <li><a href="#rtp"><span class="num">06</span>RTP 與 Ways</a></li>
+    <li><a href="#hit"><span class="num">07</span>命中頻率與全期望值</a></li>
+    <li><a href="#binom"><span class="num">08</span>二項分布與 Scatter</a></li>
+    <li><a href="#cond"><span class="num">09</span>條件期望</a></li>
+    <li><a href="#fg"><span class="num">10</span>免費遊戲與重觸發</a></li>
+    <li><a href="#var"><span class="num">11</span>變異數</a></li>
+    <li><a href="#fgvar"><span class="num">12</span>免費遊戲的變異數</a></li>
+    <li><a href="#clt"><span class="num">13</span>CLT、信賴區間、VI</a></li>
+    <li><a href="#traps"><span class="num">14</span>陷阱總表</a></li>
+    <li><a href="#qa"><span class="num">15</span>面試問答</a></li>
+    <li><a href="#log"><span class="num">16</span>更新紀錄</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="top">
+  <h1>數學複習筆記</h1>
+  <p>slot-math-portfolio 到目前為止用到的所有數學：定義、推導、例子、陷阱。只收數學；Excel 操作、設定檔、程式細節在《機率工程師轉職筆記》。每學完一段數學就補上。</p>
+  <div class="meta">
+    <span class="chip">目前進度：Day 6 VI 與信賴區間</span>
+    <span class="chip">最後更新 2026-11-21</span>
+  </div>
+</header>
+
+<!-- ========== 01 ========== -->
+<section class="card" id="sample">
+  <h2><span class="num">01</span>樣本空間與等機率</h2>
+  <p class="src">Day 3</p>
+<pre class="math">5 軸，第 i 軸長 Lᵢ。一轉 = 5 個停止位置 (s₁, …, s₅)
+總組合數 T = L₁ · L₂ · L₃ · L₄ · L₅ = 30⁵ = 24,300,000     ← 乘法原理
+
+P(s₁, …, s₅) = P(s₁) × … × P(s₅)        ← 獨立
+             = (1/L₁) × … × (1/L₅)      ← 均勻
+             = 1/T</pre>
+  <div class="key"><strong>兩個假設</strong>均勻（每格 1/Lᵢ）＋獨立（各軸互不影響），由 RNG 保證。這樣才能用「組合數 ÷ 總組合數」算機率。</div>
+  <div class="trap"><strong>隨機 ≠ 等機率</strong>軸 1 位置 0 的機率若是 1/2，獨立仍成立但均勻失效，P 就不是 1/T，數組合數的方法全部失效。</div>
+</section>
+
+<!-- ========== 02 ========== -->
+<section class="card" id="count">
+  <h2><span class="num">02</span>計數：乘法原理、剛好 vs 至少、互斥</h2>
+  <p class="src">Day 3</p>
+  <h3>乘法原理</h3>
+  <p>分步驟選、每步選法互不影響 → 總數 = 各步選法數相乘。</p>
+  <h3>Lines：剛好 k 連</h3>
+<pre class="math">例：Lᵢ = 10、A 每軸 cᵢ = 2
+剛好 3 連 = c₁ c₂ c₃ (L₄ − c₄) L₅ = 2·2·2·8·10 = 640     ← 軸 4 必須「不是 A」
+剛好 4 連 = c₁ c₂ c₃ c₄ (L₅ − c₅) = 128
+剛好 5 連 = c₁ c₂ c₃ c₄ c₅        = 32
+至少 3 連 = c₁ c₂ c₃ L₄ L₅        = 800 = 640 + 128 + 32   ← 驗算</pre>
+  <div class="key"><strong>互斥才能相加</strong>同一符號只算最長，所以「剛好 3/4/5 連」互斥，RTP 才能把各獎項直接加總。分項加總 = 另一種算法，是最好用的驗算。</div>
+  <h3>Ways：一路 = 每軸各挑一個</h3>
+<pre class="math">軸 1 有 2 個 H1、軸 2 有 2 個、軸 3 有 1 個、軸 4 沒有
+剛好 3 連 H1 = 2 × 2 × 1 = 4 路
+5×3 盤面每軸 3 列 → 3⁵ = 243 條路徑（243 Ways）</pre>
+</section>
+
+<!-- ========== 03 ========== -->
+<section class="card" id="expect">
+  <h2><span class="num">03</span>期望值、線性、指示變數</h2>
+  <p class="src">Day 1、Day 3、Day 4</p>
+<pre class="math">E[X] = Σ x · P(X = x)                    ← 平均值
+總和 = 個數 × 平均                        ← 等機率時 E[X] = 總和 / 總組合數
+E[X + Y] = E[X] + E[Y]                   ← 線性：永遠成立，不需要獨立、不需要互斥
+E[cX] = c · E[X]                         ← 常數可以提出來</pre>
+  <h3>指示變數：期望值 = 機率</h3>
+<pre class="math">1{事件} = 事件發生 1，否則 0
+E[1{事件}] = 1 · P(事件) + 0 · P(不發生) = P(事件)</pre>
+  <h3>雙重計數：每個 A 被看到幾次</h3>
+<pre class="math">把 L 個停止位置的「視窗內 A 個數」全部加起來：
+  橫著加（每個視窗）：不規則
+  直著加（每個 A）  ：每個 A 剛好被 3 個視窗看到 → 總和 = 3c
+E[Xᵢ] = 3cᵢ / Lᵢ                         ← Xᵢ = 第 i 軸視窗內 A 個數</pre>
+  <h3>E[X] 和 P(X ≥ 1) 不一樣</h3>
+<pre class="math">軸 1 的 S 在第 5、7 格，L = 30
+X = I₅ + I₇        （I₅ = 第 5 格那顆 S 在視窗內）
+E[X] = 3/30 + 3/30 = 6/30 = 0.2            ← 線性
+P(X=1) = 4/30、P(X=2) = 1/30（停在 5 時兩個都看到）、P(X≥1) = 5/30
+驗算：E[X] = 1·4/30 + 2·1/30 = 6/30 ✓
+
+E[X] = 1·P(X=1) + 2·P(X=2) + 3·P(X=3)
+P(X≥1) = 1·P(X=1) + 1·P(X=2) + 1·P(X=3)
+→ E[X] ≥ P(X ≥ 1)，只有不可能看到 2 個以上時才相等</pre>
+  <div class="trap"><strong>1 − 3c/L 不是 P(X = 0)</strong>[A, K, A, Q, J]：1 − 6/5 = −0.2，負的機率。3c/L 是平均個數，不是機率。</div>
+</section>
+
+<!-- ========== 04 ========== -->
+<section class="card" id="indep">
+  <h2><span class="num">04</span>獨立與同分布</h2>
+  <p class="src">Day 3、Day 6</p>
+<pre class="math">同分布 → 任何函數的期望值都一樣：E[D₁] = E[D₂]、E[D₁²] = E[D₂²]
+獨立   → 乘積的期望值可以拆：E[XY] = E[X] · E[Y]</pre>
+  <h3>骰子例</h3>
+<pre class="math">D₁、D₂ 兩顆骰子，同分布且獨立
+E[D] = 3.5        E[D²] = (1² + … + 6²)/6 = 91/6 ≈ 15.17
+
+E[D₁·D₂] = Σ Σ i·j / 36 = (1+…+6)(1+…+6)/36 = 21·21/36 = 12.25 = 3.5²   ← 獨立，可拆
+E[D₁·D₁] = 15.17 ≠ 12.25                                                ← 自己跟自己不獨立
+差 = 15.17 − 12.25 = 2.92 = Var(D)</pre>
+  <h3>應用：Ways 全部盤面的總路數</h3>
+<pre class="math">一盤剛好 3 連的路數 = X₁ · X₂ · X₃ · 1{X₄ = 0}
+總和 = T × E[X₁ X₂ X₃ 1{X₄=0}]
+     = T × E[X₁]·E[X₂]·E[X₃]·P(X₄=0)                 ← 各軸獨立才能拆
+     = T × (3c₁/L₁)(3c₂/L₂)(3c₃/L₃)(N₄/L₄)
+     = Sum₁ · Sum₂ · Sum₃ · N₄ · L₅                   ← Sumᵢ = 3cᵢ，L 約掉
+
+H1：6 × 6 × 6 × 24 × 30 = 155,520 路</pre>
+  <div class="trap"><strong>最後一軸乘 L，不是 Sum</strong>剛好 3 連只要求軸 4 斷掉，軸 5 停哪都算 1 次。</div>
+</section>
+
+<!-- ========== 05 ========== -->
+<section class="card" id="gap">
+  <h2><span class="num">05</span>看不到的停止位置數 N（間隔通式）</h2>
+  <p class="src">Day 3</p>
+<pre class="math">P(Xᵢ = 0) = Nᵢ / Lᵢ        N = 視窗內完全沒有 A 的停止位置數
+
+捲軸看成圓圈，相鄰兩個 A 之間夾 g 格非 A（c 個 A → c 個間隔）
+長度 g 的間隔放得下 g − 2 個「連續 3 格都不是 A」的視窗
+N = Σ max(0, gⱼ − 2)                     （視窗 r 列：gⱼ − (r − 1)）
+
+L − 3c = Σ (gⱼ − 2)                      ← 捷徑
+捷徑正確 ⇔ 每個 gⱼ ≥ 2 ⇔ 任兩個 A 的距離 ≥ 列數</pre>
+<pre class="math">例：長度 10，2 個 Q 堆疊在 0、1 → 間隔 0 和 8
+  N = 0 + 6 = 6           捷徑 10 − 6 = 4 ✗（重疊的視窗扣了兩次）</pre>
+  <div class="key"><strong>對 RTP 的影響</strong>E[Xᵢ] = 3cᵢ/Lᵢ 只看個數；P(Xᵢ = 0) 看排列。個數相同、排列不同的兩款遊戲 RTP 可以不同。堆疊：看不到的機率變高，看到就是多個 → 波動度上升。</div>
+  <div class="trap"><strong>有 Wild 後 N ≠ L − Sum</strong>同符號間距 ≥ 3，但 W 和 A 可以相鄰：軸 2 第 5 格 A、第 6 格 W，N = 30 − 15 + 2 = 17。N 一定要直接數。</div>
+</section>
+
+<!-- ========== 06 ========== -->
+<section class="card" id="rtp">
+  <h2><span class="num">06</span>RTP 與 Ways</h2>
+  <p class="src">Day 4</p>
+<pre class="math">W = 一轉派彩（隨機變數）
+E[W] = Σ w(組合) · (1/T) = 總派彩 / T        ← 等機率
+RTP  = E[W] / bet = 總派彩 / (T × bet)
+莊家優勢 = 1 − RTP
+
+Ways：總派彩 = Σ（各獎項總路數 × 每路賠率）
+
+小例子：1 軸 4 格、押 50、只有第 4 格派 100
+  100 / (4 × 50) = 0.5      E[W] = 25，25/50 = 0.5 ✓</pre>
+  <div class="trap"><strong>總派彩是錢，不是中獎盤面數</strong>中獎盤面數 / 總組合數 = 命中頻率，不是 RTP。</div>
+  <h3>Wild：把「K」換成「K 或 W」</h3>
+<pre class="math">Sumᵢ = 視窗內「K 或 W」個數加總      Nᵢ = 視窗內「沒有 K 也沒有 W」的停止位置數
+
+每軸（2–5）加 1 個 W → 每個符號 Sum +3，但倍數不同：
+  H1：6 → 9 (×1.5)      K：12 → 15 (×1.25)
+  5 連 H1 ×1.5⁴ ≈ 5.06    5 連 K ×1.25⁴ ≈ 2.44
+H1 整體 ×2.99 = 以原派彩為權重的加權平均（3 連 ×1.97、4 連 ×2.95、5 連 ×5.06）</pre>
+  <p>結論：Wild 對稀有高分符號與長連線放大最多 → RTP 和波動度都上升。</p>
+<pre class="math">本遊戲：主遊戲連線 49.25% + Scatter 2.12% = RTP_spin 51.37%</pre>
+</section>
+
+<!-- ========== 07 ========== -->
+<section class="card" id="hit">
+  <h2><span class="num">07</span>命中頻率、全期望值、幾何分布</h2>
+  <p class="src">Day 4</p>
+  <p>命中頻率 = P(至少中一個獎)。各符號中獎<strong>不互斥</strong>，不能相加（排容要 2⁸ − 1 = 255 項）→ 直接數盤面。只看前 3 軸：30³ = 27,000 種。</p>
+<pre class="math">中獎 ⇔ ∃ s ∈ 視窗₁，(s 或 W ∈ 視窗₂) 且 (s 或 W ∈ 視窗₃)
+加 S 前：13,953 / 27,000 = 51.68%       加 S 後：47.63%（1 in 2.10）</pre>
+  <h3>全期望值：中獎時平均贏幾倍</h3>
+<pre class="math">E[W] = P(H) · E[W | H] + P(沒中) · E[W | 沒中]
+     = P(H) · E[W | H] + P(沒中) · 0
+E[W | H] = RTP / 命中頻率 = 0.5629 / 0.5168 ≈ 1.09 倍押注
+
+         RTP    命中頻率   中獎時平均
+遊戲 A   96%     50%       1.92 倍     常中、中得小
+遊戲 B   96%     10%       9.6 倍      少中、中得大</pre>
+  <h3>幾何分布與「反面」技巧</h3>
+<pre class="math">每轉成功機率 p → 平均 1/p 轉成功一次
+n 轉內至少一次 = 1 − (1 − p)ⁿ
+
+例：p = 1/200 → 平均 200 轉；100 轉內至少一次 = 1 − (199/200)¹⁰⁰ ≈ 0.394</pre>
+</section>
+
+<!-- ========== 08 ========== -->
+<section class="card" id="binom">
+  <h2><span class="num">08</span>二項分布與 Scatter</h2>
+  <p class="src">Day 4</p>
+<pre class="math">每軸看得到 S 的機率 q，各軸獨立 → X = S 的個數 ~ Binomial(5, q)
+P(X = k) = C(5, k) · qᵏ · (1 − q)⁵⁻ᵏ
+
+q = 3/30 = 0.1
+  P(3) = 10 × 0.001 × 0.81 = 0.0081
+  P(4) = 5 × 0.0001 × 0.9  = 0.00045
+  P(5) = 0.00001
+  P(≥3) = 0.00856 = 1 − P(≤2)       → 平均 ≈ 117 轉觸發
+
+RTP_scatter = Σ P(k) · mₖ = 0.0081·2 + 0.00045·10 + 0.00001·50 = 2.12%</pre>
+  <div class="key"><strong>q = 3c/L 的前提</strong>3c/L 其實是 E[視窗內 S 個數]；同符號間距 ≥ 3 時才等於 P(至少 1 個)。第 5、7 格的例子 q = 5/30，不是 6/30。</div>
+  <h3>各軸 q 不同：Poisson 二項分布</h3>
+<pre class="math">二項分布要求每次成功機率相同。不同時用全機率法則一軸一軸拆：
+例：軸 1–4 q = 0.1，軸 5 q = 0.2，P(剛好 3 個)
+  軸 5 有 S：0.2 × C(4,2)·0.1²·0.9² = 0.00972
+  軸 5 沒 S：0.8 × C(4,3)·0.1³·0.9  = 0.00288
+  合計 0.0126
+Python：dist = np.convolve(dist, [1 − qᵢ, qᵢ])  逐軸做</pre>
+</section>
+
+<!-- ========== 09 ========== -->
+<section class="card" id="cond">
+  <h2><span class="num">09</span>條件期望</h2>
+  <p class="src">Day 5</p>
+<pre class="math">E[Y | A] = Σ y · P(Y = y | A) = Σ y · P(Y = y 且 A) / P(A)
+
+骰子例：E[點數 | ≥ 4] = (4 + 5 + 6)/3 = 5
+
+若 A 不發生時 Y = 0：
+  E[Y] = P(A)·E[Y|A] + P(非A)·0   →   E[Y | A] = E[Y] / P(A)
+
+E[送幾次 | 觸發] = r / P(觸發) = 0.08795 / 0.00856 ≈ 10.27
+（比 10 大：觸發時偶爾是 4、5 個 S，送 15、20 次）</pre>
+</section>
+
+<!-- ========== 10 ========== -->
+<section class="card" id="fg">
+  <h2><span class="num">10</span>免費遊戲與重觸發</h2>
+  <p class="src">Day 5、Day 6</p>
+<pre class="math">規則：3/4/5 個 S 送 10/15/20 次；贏分 ×2；可重觸發；同一套捲軸
+
+A = 一轉送出幾次免費轉（0、10、15、20）
+r = E[A] = 0.0081×10 + 0.00045×15 + 0.00001×20 = 0.08795</pre>
+  <h3>平均總轉數 m（面試題 4）</h3>
+<pre class="math">方法一（等比級數）：1 + r + r² + … = 1/(1 − r)
+方法二（第一步分析）：m = 1 + r · m   →   m = 1/(1 − r) ≈ 1.0964
+         ↑   ↑
+     這 1 轉  平均送 r 轉，每轉再各自平均帶出 m 轉（自我相似：捲軸沒記憶）
+收斂條件 r < 1；r ≥ 1 期望值無限大 → 實務加上限，改用有限狀態馬可夫鏈</pre>
+  <h3>Wald 等式</h3>
+<pre class="math">E[Z₁ + … + Z_A] = E[A] · E[Z]       條件：每次的量跟次數 A 無關
+（先固定 A = a：線性 → a·E[Z]；再對 A 平均 → E[A]·E[Z]）</pre>
+  <h3>1 次免費轉的期望贏分 E[Z]</h3>
+<pre class="math">Z = 1 次免費轉＋它所有子孫的總贏分 = 2X + (Z₁ + … + Z_A)
+
+E[Z] = 2E[X] + r · E[Z]   →   E[Z] = 2E[X] / (1 − r) = 2E[X] · m
+     = 2 × 0.51367 / 0.91205 ≈ 1.1264</pre>
+  <h3>RTP_FG 與總 RTP</h3>
+<pre class="math">每次主遊戲轉從免費遊戲拿到：r · E[Z] = r/(1−r) × 2 × RTP_spin
+                          = 0.08795 × 1.1264 ≈ 9.91%
+
+總 RTP = E[T] = E[X] + r · E[Z] = 0.51367 + 0.09907 = 0.61274 = 61.27%</pre>
+</section>
+
+<!-- ========== 11 ========== -->
+<section class="card" id="var">
+  <h2><span class="num">11</span>變異數與標準差</h2>
+  <p class="src">Day 2、Day 6</p>
+<pre class="math">Var(X) = E[(X − μ)²]           離平均距離的平方再平均（平方才不會正負抵消）
+       = E[X²] − E[X]²          捷徑：先平方再平均 − 先平均再平方
+σ = √Var                        單位回到「倍押注」
+
+練習 1：X = 0/2/0/0.5     E[X] = 0.625，E[X²] = 1.0625，Var = 0.671875，σ ≈ 0.82
+練習 2：X = 0/0/1/0/4     E[X] = 1，E[X²] = 3.4，Var = 2.4，σ ≈ 1.55   ← 大獎平方後放大</pre>
+  <div class="key"><strong>兩款 RTP 96% 差在哪</strong>平均一樣，σ 可以差很多：σ 大 → 中獎少但獎大，玩家資金起伏大、賭場短期風險也大。</div>
+  <h3>交叉項：E[X²] 不能各符號分開算</h3>
+<pre class="math">盤面 A 贏 0.2、K 贏 0.6 → X = 0.8，X² = 0.64
+分開平方 0.2² + 0.6² = 0.40，差 0.24 = 2ab
+
+E[X]  = Σ E[Xₛ]                        ✓ 線性
+E[X²] = Σ E[Xₛ²] + Σ 2E[Xₛ Xₜ]          ✗ 同盤面一起中獎時交叉項 ≠ 0
+→ 逐盤面先加總再平方：30⁵ 盤 → Python 窮舉</pre>
+<h3>分布形狀：派彩區間分佈</h3>
+  <p>RTP、σ 只是兩個數字，同樣的兩個數字可以有完全不同的形狀。</p>
+<pre class="math">遊戲 A：50% 贏 0、50% 贏 2            E[X] = 1，E[X²] = 2，Var = 1
+遊戲 B：90% 贏 0.667、10% 贏 4         E[X] = 1，E[X²] = 2，Var = 1
+
+          遊戲 A           遊戲 B
+贏 0      50%              0%
+0～1 倍   0%               90%（LDW：看起來中了，其實虧錢）
+> 1 倍    50%（2 倍）      10%（4 倍）
+命中頻率  50%              100%</pre>
+<pre class="math">區間（倍押注）   回答的問題
+0               多常完全沒中（= 1 − 命中頻率；Scatter 派彩也算中獎）
+0～1            LDW 有多少
+1～5、5～20     有感的小獎、中獎
+20～100、>100   大獎與尾巴：σ 主要來自這裡</pre>
+  <div class="key"><strong>設計師的旋鈕</strong>想減少「贏 0」又要 RTP、σ 不變：0 倍 ↓ → LDW ↑（RTP 上升）→ 中間獎 ↓（扣回 RTP）→ 大獎更稀有但更大（補回 σ）。A → B 就是這樣變的。</div>
+  <p>算法：主遊戲用 30⁵ 盤面窮舉（精確）；含免費遊戲重觸發沒有上限，用模擬。</p>
+<pre class="math">主遊戲 X 實際結果（30⁵ 窮舉，payout_distribution）：
+  0         51.83%      ≤ 1 − 命中頻率 52.37%（差 0.54% = 沒連線但有 ≥ 3 個 S）
+  0-1       33.78%      ← LDW
+  1-5       13.03%
+  5-20       1.35%
+  20-100     0.0085%    （2,074 盤，含 243 盤 5 個 S）
+  &gt;100       0          （主遊戲最大 50 倍）
+
+P(LDW | 中獎) = P(0-1) / (1 − P(0)) = 0.3378 / 0.4817 ≈ 70%
+  100 轉：52 轉贏 0；48 轉中獎，其中 34 轉 LDW、14 轉 ≥ 1 倍</pre>
+  <h3>加入免費遊戲後（T = X + S）</h3>
+<pre class="math">觸發一定有 ≥ 3 個 S → 本來就有 Scatter 派彩（≥ 2 倍）
+→ 「0」「0-1」兩列不變；觸發的 0.86% 從 1-5 往右搬到 5-20、20-100、&gt;100
+→ &gt;100 不再是 0（免費轉 ×2、可重觸發，理論上無上限）
+
+為什麼不能窮舉：10 次免費轉 = (30⁵)¹⁰ ≈ 10⁷⁴ 種組合，重觸發還沒有上限
+→ 模擬，每一列是比例 p̂，誤差 p̂ ± 1.96·√(p̂(1 − p̂)/N)     ← 伯努利 σ = √(p(1−p))</pre>
+<pre class="math">模擬結果（sim/simulate.py，100 萬轉，seed 2026）：
+  RTP 0.61239，95% CI [0.60841, 0.61638] ∋ 0.61274 ✓     sd 2.0333 ✓     最大 109.6 倍
+
+  區間      含免費遊戲（模擬）     只有主遊戲（窮舉）
+  0         51.88% ± 0.10%        51.83%     ✓ 不變
+  0-1       33.81% ± 0.09%        33.78%     ✓ 不變
+  1-5       12.27%                13.03%     ↓
+  5-20       1.84%                 1.35%     ↑
+  20-100     0.19%                 0.0085%   ↑ ×23
+  &gt;100       0.0002%（2 次）       0          ↑
+
+抽盤面 = 均勻抽攤平後的 index：index = p1·30⁴ + … + p5（30 進位，一對一）
+  → 每種 (p1…p5) 機率 (1/30)⁵ = 每軸均勻且獨立</pre>
+<pre class="math">主遊戲（連線＋Scatter，不含免費遊戲）：
+E[X] = 0.51367    E[X²] = 1.8405    Var(X) = 1.5766    σ = 1.2556    最大贏分 50 倍</pre>
+</section>
+
+<!-- ========== 12 ========== -->
+<section class="card" id="fgvar">
+  <h2><span class="num">12</span>免費遊戲（含重觸發）的變異數</h2>
+  <p class="src">Day 6 步驟 5</p>
+  <p>目標：每次主遊戲轉的總贏分 T 的 Var(T) = E[T²] − E[T]²。E[T] 已有，T 裡面有免費遊戲 → 要先算 E[Z²]。</p>
+  <h3>每個隨機變數的意思</h3>
+<div class="board">主遊戲轉 1 次
+┌──────────────────────────────┐
+│ 盤面（5 軸 × 3 格）           │
+│  → X：這個盤面贏幾倍押注       │
+│  → A：這個盤面送幾次免費轉     │
+└──────────────────────────────┘
+        送 A 次免費轉
+       /     |      \
+     Z₁     Z₂ ...  Z_A      ← 每個 Zⱼ = 那一次免費轉 + 它重觸發的所有子孫
+     └──────┴───────┘
+           S = Z₁ + Z₂ + … + Z_A</div>
+  <div class="tbl"><table>
+    <thead><tr><th>符號</th><th>意思</th><th>期望值</th></tr></thead>
+    <tbody>
+      <tr><td><strong>X</strong></td><td>這個盤面本身贏幾倍押注（連線＋Scatter，不含免費遊戲）</td><td class="n">0.51367</td></tr>
+      <tr><td><strong>A</strong></td><td>這個盤面送幾次免費轉（0、10、15、20）</td><td class="n">r = 0.08795</td></tr>
+      <tr><td><strong>Zⱼ / Z</strong></td><td>1 次免費轉連同所有子孫的總贏分（已含 ×2）</td><td class="n">1.1264</td></tr>
+      <tr><td><strong>S</strong></td><td>送出去的免費轉加總 Z₁ + … + Z_A（A = 0 時為 0）</td><td class="n">r · E[Z]</td></tr>
+      <tr><td><strong>T</strong></td><td>主遊戲轉 1 次的總贏分 = X + S</td><td class="n">0.61274</td></tr>
+    </tbody>
+  </table></div>
+<pre class="math">T = X  + S     ← 主遊戲轉：×1
+Z = 2X + S     ← 免費轉：×2
+
+例：盤面 3 個 S + 小連線 → X = 2.4、A = 10
+    10 次免費轉 S = 30（其中 Z₇ = 25 含重觸發）→ T = 32.4</pre>
+  <ul>
+    <li><strong>Zⱼ 同分布：</strong>結構跟 Z 一樣 → E[Zⱼ] = E[Z]、E[Zⱼ²] = E[Z²]</li>
+    <li><strong>Zⱼ 獨立：</strong>不同分支彼此獨立，也跟產生它們的盤面（X、A）獨立</li>
+    <li><strong>X 和 A 不獨立：</strong>同一盤面的 S 個數同時決定 Scatter 派彩和送幾轉</li>
+  </ul>
+  <h3>步驟 1：展開</h3>
+<pre class="math">Z² = (2X + S)² = 4X² + 4XS + S²
+E[Z²] = 4E[X²] + 4E[XS] + E[S²]</pre>
+  <h3>步驟 2：E[S²]（先固定 A = a，再對 A 平均）</h3>
+<pre class="math">(Z₁ + … + Z_a)²：平方項 a 個、交叉項（ZᵢZⱼ, i ≠ j，分開算）a(a−1) 個
+  A = 3 例：Z₁² + Z₂² + Z₃² + (Z₁Z₂ + Z₂Z₁ + Z₁Z₃ + Z₃Z₁ + Z₂Z₃ + Z₃Z₂)
+
+平方項 E[Zᵢ²] = E[Z²]（同分布）       交叉項 E[ZᵢZⱼ] = E[Z]²（獨立）
+E[S² | A = a] = a · E[Z²] + a(a−1) · E[Z]²
+
+E[S²] = Σₐ P(A = a)·[ a·E[Z²] + a(a−1)·E[Z]² ]
+      = E[A]·E[Z²] + E[A(A−1)]·E[Z]²
+      = r·E[Z²]    + E[A(A−1)]·E[Z]²</pre>
+  <p>注意 E[A(A−1)] ≠ r(r−1)，要用 A 的分布算：Σ P(A = a)·a(a−1)。</p>
+  <h3>步驟 3：E[XS]（先固定盤面，再對盤面平均）</h3>
+<pre class="math">X 和 A 不獨立 → E[XS] ≠ E[X]·E[S]
+
+盤面固定 → X = x、A = a 是已知數字
+  E[S | A = a] = a · E[Z]
+  E[XS | 盤面] = x · a · E[Z]          ← x 是常數，提出來
+對所有盤面平均：E[XS] = E[XA] · E[Z]    （E[XA] 要逐盤面算，比 E[X]·E[A] 大）</pre>
+  <h3>步驟 4：組合、移項</h3>
+<pre class="math">E[Z²] = 4E[X²] + 4E[XA]·E[Z] + r·E[Z²] + E[A(A−1)]·E[Z]²
+
+E[Z²]·(1 − r) = 4E[X²] + 4E[XA]·E[Z] + E[A(A−1)]·E[Z]²
+
+E[Z²] = [ 4E[X²] + 4E[XA]·E[Z] + E[A(A−1)]·E[Z]² ] / (1 − r)
+
+  4E[X²]            這一轉自己的贏分平方（×2 平方 → ×4）
+  4E[XA]·E[Z]       這一轉贏分 × 子孫贏分（X、A 相關）
+  E[A(A−1)]·E[Z]²   不同子孫分支之間的交叉項
+  ÷ (1 − r)         每個子孫自己的平方項 r·E[Z²] 移項過來</pre>
+  <p>跟 E[Z] = 2E[X]/(1−r) 一樣，分母 (1 − r) 是重觸發無限延續造成的放大。</p>
+  <h3>步驟 5：E[T²] 與 Var(T)</h3>
+<pre class="math">T² = (X + S)² = X² + 2XS + S²
+
+E[T²] = E[X²] + 2E[XA]·E[Z] + r·E[Z²] + E[A(A−1)]·E[Z]²     ← 不用移項
+Var(T) = E[T²] − E[T]²        σ_total = √Var(T)</pre>
+  <div class="key"><strong>為什麼 E[T²] 不用移項、E[Z²] 要</strong>T 的子孫是免費轉（Z），不是主遊戲轉（T）：主遊戲轉只是整棵樹的根，T 不自我相似。Z 的子孫還是免費轉，跟 Z 自己一樣，所以 E[Z²] 出現在兩邊。</div>
+  <h3>步驟 6：逐盤面算零件</h3>
+<pre class="math">Python：w = 每盤贏分（點）、A = 每盤送幾次（all_board_awards），n = 30⁵
+  E[XA]     = (w * A).sum() / n / bet        ← X 出現一次，除一次 bet
+  E[A(A−1)] = (A * (A − 1)).sum() / n        ← A 跟押注無關
+
+E[XA] = 0.29330   vs   E[X]·E[A] = 0.04518   ← 正相關，大 6.5 倍
+  粗估（只算 Scatter 派彩）：0.0081×10×2 + 0.00045×15×10 + 0.00001×20×50 ≈ 0.24
+  Cov(X, A) = E[XA] − E[X]·E[A] &gt; 0
+
+E[A(A−1)] 手算：0.0081×90 + 0.00045×210 + 0.00001×380 = 0.8273   ✓ 與 Python 一致
+  （r(r−1) 是負的，不可能是答案）</pre>
+  <h3>結果</h3>
+<pre class="math">E[Z²]   = 10.6718
+E[T²]   = 4.4895
+Var(T)  = 4.4895 − 0.61274² = 4.1141
+σ_total = 2.0283
+
+模擬 200 萬次主遊戲轉（含重觸發）：
+  RTP 0.61279，95% CI [0.60999, 0.61560] ∋ 0.61274 ✓      σ 2.0247（差 0.2%）✓
+
+                 RTP       σ
+主遊戲 X       51.37%   1.2556
+含免費遊戲 T   61.27%   2.0283    ← RTP +10 個百分點，σ +62%、變異數 ×2.6</pre>
+  <div class="key"><strong>為什麼免費遊戲讓 σ 大增</strong>免費遊戲的 9.91% 集中在 0.86% 的轉（觸發時平均約 11.6 倍押注）。變異數看平方，罕見的大值平方後被放大最多。同樣的 RTP 從主遊戲搬到免費遊戲，σ 大幅上升。</div>
+  <div class="key"><strong>模擬 σ 為什麼不像 RTP 那麼準</strong>尾巴很重（偶爾一次贏幾百倍），樣本標準差的抽樣誤差比平均值大，0.2% 的差距正常。</div>
+</section>
+
+<!-- ========== 13 ========== -->
+<section class="card" id="clt">
+  <h2><span class="num">13</span>大數法則、中央極限定理、信賴區間、VI</h2>
+  <p class="src">Day 2、Day 6</p>
+  <h3>名詞</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>名詞</th><th>意思</th><th>本遊戲的例子</th></tr></thead>
+    <tbody>
+      <tr><td>分布</td><td>隨機變數每個值出現的機率（整張表）</td><td>T：99% 是 0～小額，偶爾幾百倍</td></tr>
+      <tr><td>μ（期望值）</td><td>長期平均</td><td>RTP = 0.61274</td></tr>
+      <tr><td>σ（標準差）</td><td>單次結果離平均多遠的典型距離</td><td>σ_total = 2.0283</td></tr>
+      <tr><td>i.i.d.</td><td>獨立且同分布：每轉互不影響、規則一樣</td><td>RNG 每轉各自抽停止位置</td></tr>
+      <tr><td>樣本平均 T̄</td><td>N 轉實際贏分的平均 = N 轉的實際返還率</td><td>玩 1,000 轉贏回 0.55 倍</td></tr>
+      <tr><td>標準誤 σ/√N</td><td>T̄ 的標準差：N 轉平均會晃多少</td><td>N = 10⁶ → 0.0020</td></tr>
+      <tr><td>常態分布 N(μ, σ²)</td><td>鐘形曲線，由 μ、σ 完全決定</td><td>T̄（N 夠大時）</td></tr>
+      <tr><td>標準常態 N(0, 1)</td><td>μ = 0、σ = 1 的常態</td><td></td></tr>
+      <tr><td>標準化（z 分數）</td><td>(值 − 平均) ÷ 標準差 = 離平均幾個 σ</td><td></td></tr>
+      <tr><td>1.96</td><td>N(0,1) 中間 95% 的邊界：P(−1.96 ≤ Z ≤ 1.96) = 0.95</td><td></td></tr>
+      <tr><td>信心水準</td><td>區間要涵蓋的機率（95%、90%…）</td><td>90% 用 1.645、99% 用 2.576</td></tr>
+      <tr><td>半寬（誤差範圍）</td><td>1.96·σ/√N，區間 = 中心 ± 半寬</td><td></td></tr>
+      <tr><td>VI（波動度指數）</td><td>1.96·σ：轉 1 次的 95% 半寬；除以 √N 就是 N 轉的半寬</td><td>3.976</td></tr>
+      <tr><td>重尾</td><td>極端大值雖罕見但不夠罕見，拉高 σ、拖慢收斂</td><td>免費遊戲重觸發</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>定理 1：變異數的兩條規則 → σ/√N</h3>
+<pre class="math">規則 a：Var(cX) = c²·Var(X)
+  證：E[(cX)²] − E[cX]² = c²E[X²] − c²E[X]² = c²·Var(X)
+
+規則 b：Var(X + Y) = Var(X) + Var(Y) + 2Cov(X, Y)
+        獨立 → Cov = 0 → Var(X + Y) = Var(X) + Var(Y)
+
+N 轉相加（每轉獨立）：Var(T₁ + … + T_N) = N·σ²            ← 規則 b
+N 轉平均：Var(T̄) = Var((T₁ + … + T_N)/N) = N·σ² / N² = σ²/N   ← 規則 a，c = 1/N
+         σ(T̄) = σ / √N</pre>
+  <div class="key"><strong>為什麼是 √N 不是 N</strong>變異數縮小 N 倍，標準差是開根號，只縮小 √N 倍。精度要好 10 倍，轉數要多 100 倍。</div>
+
+  <h3>定理 2：大數法則（LLN）</h3>
+<pre class="math">i.i.d.、期望值 μ 存在 → N → ∞ 時 T̄ → μ
+白話：轉得夠多，實際返還率會接近 RTP</pre>
+  <p>只說「會靠近」，沒說 N 轉時離多遠。離多遠要靠中央極限定理。</p>
+
+  <h3>定理 3：中央極限定理（CLT）</h3>
+<pre class="math">i.i.d.、μ 和 σ 存在 → N 夠大時
+  T̄ 近似 N(μ, σ²/N)        不管單次 T 原本長什麼樣子
+
+骰子例：1 顆骰子 1～6 平的（均勻）
+       2 顆平均：三角形（3.5 最多）
+       30 顆平均：已經很像鐘形，μ = 3.5、σ = 1.708/√30 ≈ 0.31</pre>
+  <div class="trap"><strong>N 要「夠大」，尾巴越重要越大</strong>單轉 T 極度偏斜（大部分小、偶爾幾百倍）。N 小時 T̄ 還不是鐘形，用 1.96 算出的區間不可靠。</div>
+
+  <h3>組合：95% 區間</h3>
+<pre class="math">標準化：Z = (T̄ − μ) / (σ/√N) ≈ N(0, 1)
+P(−1.96 ≤ Z ≤ 1.96) = 0.95
+→ P( μ − 1.96σ/√N ≤ T̄ ≤ μ + 1.96σ/√N ) = 0.95
+
+VI = 1.96σ        95% 區間 = μ ± VI/√N</pre>
+  <h3>兩種用法（方向相反）</h3>
+<pre class="math">(1) 預測：已知 RTP，玩家 N 轉的實際返還率落在哪？
+    RTP ± VI/√N
+    N = 1,000：      61.27% ± 12.6%   → [48.7%, 73.8%]
+    N = 1,000,000：  61.27% ± 0.40%   → [60.87%, 61.67%]
+
+(2) 驗證：模擬得到 T̄，理論 RTP 合不合理？（信賴區間）
+    T̄ ± 1.96·s/√N        s = 模擬算出的樣本標準差
+    200 萬轉：0.61279 ± 0.0028 → [0.60999, 0.61560] ∋ 0.61274 ✓
+
+(3) 反推轉數：要 ±e 的精度
+    VI/√N ≤ e  →  N ≥ (VI/e)²
+    ±1%：N ≥ (3.976/0.01)² ≈ 158,000 轉</pre>
+  <div class="key"><strong>面試題 2：模擬 95.8%、理論 96% 對嗎？</strong>要看 N 和 σ。算 95.8% ± 1.96σ/√N，96% 在區間內就合理；不在就是邏輯或 RNG 有問題。只說「差 0.2% 很接近」不算答案。</div>
+  <h3>練習</h3>
+<pre class="math">Q1：10,000 轉的 95% 區間（RTP 61.27%、VI 3.976）
+    半寬 = 3.976 / √10,000 = 0.03976 → [57.29%, 65.25%]
+    轉數 ×10（1,000 → 10,000），寬度只縮成約 1/3（√10 ≈ 3.16）
+
+Q2：VI = 10 和 VI = 2，要 ±1% 的精度
+    (10/0.01)² = 1,000,000 轉     (2/0.01)² = 40,000 轉     → 25 倍
+    VI 跟標準差成正比，轉數跟變異數（σ²）成正比：VI 差 5 倍，轉數差 25 倍</pre>
+  <div class="trap"><strong>VI 不是變異數</strong>VI = 1.96σ 跟「標準差」成正比；需要的轉數才跟「變異數」成正比。面試時兩個詞不能混用。</div>
+</section>
+
+<!-- ========== 14 ========== -->
+<section class="card" id="traps">
+  <h2><span class="num">14</span>陷阱總表</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>錯誤</th><th>正確</th></tr></thead>
+    <tbody>
+      <tr><td>c₁c₂c₃c₄L₅ 當「剛好 4 連」</td><td>那是至少 4 連；剛好 k 連的下一軸要「不是 A」</td></tr>
+      <tr><td>P(X = 0) = 1 − 3c/L</td><td>3c/L 是平均個數；N 要看排列（間隔通式）</td></tr>
+      <tr><td>最後一軸乘 Sum₅</td><td>剛好 3 連軸 5 不限，乘 L₅</td></tr>
+      <tr><td>各符號命中機率相加</td><td>不互斥，不能加；直接數盤面</td></tr>
+      <tr><td>BINOM.DIST(3,5,q,TRUE) 當 P(≥3)</td><td>那是 P(≤3)；P(≥3) = 1 − P(≤2)</td></tr>
+      <tr><td>E[X²] 各符號分開平方再加</td><td>漏交叉項 2ab；逐盤面先加總再平方</td></tr>
+      <tr><td><code>E[Z] = m * X</code></td><td>期望值兩邊都要是數字，且免費轉 ×2：2E[X]·m</td></tr>
+      <tr><td><code>2X + r·E[X]</code></td><td>每個分支帶回 E[Z]（含子孫）：2E[X] + r·E[Z]</td></tr>
+      <tr><td><code>2E[X] + r·2E[X]</code></td><td>只算到子代；用自我相似一次包進所有子孫</td></tr>
+      <tr><td><code>1/1-r</code></td><td>照運算順序是 1 − r；寫 1/(1−r)</td></tr>
+      <tr><td>E[Z] × P(觸發) × 2E[X]</td><td>E[Z] 已含 2E[X]；觸發一次送 10+ 轉，要乘 r</td></tr>
+      <tr><td>交叉項「6 個，合成」</td><td>合成是 3 項各乘 2；分開算才是 6 個 = a(a−1)</td></tr>
+      <tr><td>E[XS] = E[X]·E[S]</td><td>X、A 不獨立：E[XA]·E[Z]</td></tr>
+      <tr><td>E[A(A−1)] = r(r−1)</td><td>要用 A 的分布：Σ P(a)·a(a−1)</td></tr>
+      <tr><td>「VI 是變異數」</td><td>VI ∝ 標準差；轉數 ∝ 變異數</td></tr>
+      <tr><td><code>wins**A</code></td><td><code>**</code> 是次方；相乘用 <code>*</code></td></tr>
+      <tr><td>E[XA] 除 bet²</td><td>X 只出現一次，除一次 bet</td></tr>
+      <tr><td><code>A(A-1)</code> 寫進程式</td><td>會被當成呼叫函式；要寫 <code>A * (A - 1)</code></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ========== 15 ========== -->
+<section class="card" id="qa">
+  <h2><span class="num">15</span>面試問答</h2>
+  <details class="qa"><summary>兩款 RTP 都是 96% 的遊戲差在哪？</summary>
+    <div class="ans">平均一樣，波動度（σ）和命中頻率不同。σ 大：中獎少但獎大，資金起伏大；也可以用 RTP ÷ 命中頻率看中獎時平均贏幾倍。實例：本遊戲主遊戲 σ 1.2556，加上只佔 9.91% RTP 的免費遊戲後 σ 2.0283，RTP 越集中在罕見的特色遊戲，σ 越大。</div></details>
+  <details class="qa"><summary>RTP 和 σ 一樣的兩款遊戲，玩起來會不同嗎？</summary>
+    <div class="ans">會。兩個數字描述不了形狀：例如 50% 贏 0／50% 贏 2，和 90% 贏 0.667／10% 贏 4，平均和變異數都是 1，但後者命中 100%、90% 是 LDW。要看派彩區間分佈。</div></details>
+  <details class="qa"><summary>派彩區間分佈為什麼加免費遊戲後要用模擬？</summary>
+    <div class="ans">平均和變異數可以用第一步分析的公式避開窮舉，但整張分布沒有捷徑；10 次免費轉就有 (30⁵)¹⁰ 種組合，重觸發還沒有上限。模擬 N 次數比例，每列附 p̂ ± 1.96√(p̂(1−p̂)/N)。</div></details>
+  <details class="qa"><summary>高波動遊戲為什麼要跑更多模擬轉數？</summary>
+    <div class="ans">要 ±e 的精度需要 N ≥ (VI/e)²，轉數跟變異數成正比。VI 大 5 倍，轉數要 25 倍。</div></details>
+  <details class="qa"><summary>X 和 A 的共變異數是正還是負？為什麼？</summary>
+    <div class="ans">正。觸發的盤面一定有 Scatter 派彩，A 大時 X 也大。E[XA] = 0.2933 遠大於 E[X]·E[A] = 0.0452。</div></details>
+  <details class="qa"><summary>每轉觸發機率 1/200，平均幾轉觸發？100 轉內至少一次的機率？</summary>
+    <div class="ans">幾何分布平均 1/p = 200 轉。至少一次 = 1 − (199/200)¹⁰⁰ ≈ 39.4%（用反面算）。</div></details>
+  <details class="qa"><summary>為什麼命中頻率不能把各符號的命中機率加起來？</summary>
+    <div class="ans">同一轉可能多個符號同時中，事件不互斥。排容要 255 項，所以直接窮舉前 3 軸 27,000 種盤面。</div></details>
+  <details class="qa"><summary>Wild 對哪些獎項放大最多？</summary>
+    <div class="ans">稀有符號與長連線：每軸 Sum 都 +3，相對倍數 H1 ×1.5、K ×1.25，5 連再取 4 次方。RTP 和波動度一起上升。</div></details>
+  <details class="qa"><summary>用兩種方法推導含重觸發的免費遊戲平均轉數與期望贏分。</summary>
+    <div class="ans">(1) 等比級數 1 + r + r² + … = 1/(1−r)。(2) 第一步分析 m = 1 + r·m。期望贏分同理：E[Z] = 2E[X] + r·E[Z] → 2E[X]/(1−r)。r ≥ 1 不收斂。</div></details>
+  <details class="qa"><summary>為什麼 E[Y | 觸發] = E[Y] / P(觸發)？</summary>
+    <div class="ans">全期望值：E[Y] = P(觸發)·E[Y|觸發] + P(沒觸發)·0，沒觸發時 Y = 0，移項即得。</div></details>
+  <details class="qa"><summary>為什麼 E[XS] 不能寫成 E[X]·E[S]？</summary>
+    <div class="ans">X 和 A 由同一盤面決定，不獨立。條件在盤面上：E[XS] = E[XA]·E[Z]。</div></details>
+  <details class="qa"><summary>E[(Z₁+…+Z_A)²] 怎麼算？</summary>
+    <div class="ans">固定 A = a：a 個平方項各 E[Z²]、a(a−1) 個交叉項各 E[Z]²。對 A 平均：E[A]·E[Z²] + E[A(A−1)]·E[Z]²（隨機和的二階動差）。</div></details>
+  <details class="qa"><summary>同分布和獨立差在哪？</summary>
+    <div class="ans">同分布 → 期望值相同（E[Zᵢ²] = E[Z²]）。獨立 → 乘積可拆（E[ZᵢZⱼ] = E[Zᵢ]E[Zⱼ]）。自己跟自己永遠不獨立：E[D²] − E[D]² = Var(D)。</div></details>
+  <details class="qa"><summary>為什麼 E[Z²] 的方程式要移項，E[T²] 不用？</summary>
+    <div class="ans">免費轉的子孫還是免費轉，跟自己同分布，所以 E[Z²] 出現在兩邊。主遊戲轉的子孫是免費轉不是主遊戲轉，右邊只有已解出的 E[Z²]，直接代入。</div></details>
+</section>
+
+<!-- ========== 16 ========== -->
+<section class="card" id="log">
+  <h2><span class="num">16</span>更新紀錄</h2>
+  <ul class="log">
+    <li><time>2026-11-20</time>建立：整理 Day 1–6 所有數學；免費遊戲變異數推到 E[Z²]（待作答：E[T²]）。</li>
+    <li><time>2026-11-20</time>完成 E[T²]、Var(T) 公式；說明為什麼 E[T²] 不用移項。</li>
+    <li><time>2026-11-21</time>含免費遊戲的模擬分佈表；驗證「0」「0-1」不變。</li>
+    <li><time>2026-11-20</time>主遊戲派彩區間分佈實際結果、P(LDW | 中獎) ≈ 70%、加入免費遊戲後哪幾列會變、為什麼要模擬。</li>
+    <li><time>2026-11-20</time>第 11 節新增「分布形狀：派彩區間分佈」（同 RTP、同 σ 的遊戲 A／B）。</li>
+    <li><time>2026-11-20</time>第 13 節練習 Q1、Q2 完成。</li>
+    <li><time>2026-11-20</time>新增第 13 節：名詞表、變異數規則 → σ/√N、大數法則、中央極限定理、95% 區間與 VI 的三種用法。</li>
+    <li><time>2026-11-20</time>E[XA]、E[A(A−1)] 逐盤面算出；σ_total = 2.0283，模擬交叉驗證通過；陷阱 +3。</li>
+  </ul>
+</section>
+</main>
+</div>
+</body>
+</html>
