@@ -84,13 +84,25 @@ def all_board_wins(config):
                         c4 * np.where(c5 == 0, pays["4"], c5 * pays["5"]))
         wins += c1 * c2 * c3 * tail
 
+    wins += all_board_scatter_pays(config)
+
+    return wins
+
+
+def all_board_scatter_pays(config):
+    """Scatter pay (in points) of every board, as a 5-D array (same shape as all_board_wins).
+
+    all_board_wins(config) - all_board_scatter_pays(config) = line (ways) win only.
+    """
+    reels = config["reels"]
+    s_counts = [window_counts(r, ["S"]) for r in reels]
     n_scatter = sum(expand(s_counts[i][:, 0], i) for i in range(5))
+
     scatter_pay = np.zeros(6, dtype=np.int64)
     for k, pay in config["scatter"]["pays"].items():
         scatter_pay[int(k)] = pay
-    wins += scatter_pay[n_scatter]
 
-    return wins
+    return scatter_pay[n_scatter]
 
 
 def all_board_awards(config):

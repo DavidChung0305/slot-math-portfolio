@@ -3,9 +3,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from sim.simulate import simulate_spins
-from slotmath.exact import (all_board_wins, board_win, load_config, symbol_win,
-                            total_moments, window_counts)
+from sim.simulate import simulate_detailed, simulate_spins
+from slotmath.exact import (all_board_scatter_pays, all_board_wins, board_win,
+                            load_config, symbol_win, total_moments, window_counts)
 
 CONFIG = Path(__file__).resolve().parents[2] / "config" / "game.json"
 
@@ -74,7 +74,7 @@ def test_board_win_scatter_exactly_two(game):
 
 
 def test_board_win_max_win_five_scatters(game):
-    # 5 S (one on every reel) -> 2500 = 50x bet, the maximum base-game win
+    # 5 S (one on every reel) -> 2500 = 50x bet (scatter only, no line wins)
     # T and K stop at 2 in a row (reel 3 has neither them nor W)
     #    T  A  H2 K  T
     #    S  W  A  S  S
@@ -83,15 +83,25 @@ def test_board_win_max_win_five_scatters(game):
     assert board_win([0, 4, 7, 4, 3], counts, s_counts, config) == 2500
 
 
+def test_board_win_max_line_win(game):
+    # K on reel 1 + W on reels 2-5: H1 1 way x700 + H2 1 way x400 + K 2*2*2*2 = 16 ways x140
+    #    K  K  J  K  K
+    #    H2 A  K  S  Q
+    #    H1 W  W  W  W
+    config, counts, s_counts = game
+    assert board_win([18, 3, 1, 4, 6], counts, s_counts, config) == 700 + 400 + 16 * 140
+
+
 def test_max_win_over_all_boards(all_wins):
-    # exhaustive: no board pays more than 5 S
-    assert all_wins.max() == 2500
+    # exhaustive: since the v2 paytable (K 5-kind = 140), the W-heavy line board beats 5 S (2500)
+    assert all_wins.max() == 3340
+    assert (all_wins == 3340).sum() == 12
     assert (all_wins == 2500).sum() == 3**5
 
 
 def test_base_rtp_regression(all_wins):
-    # total points over all 30^5 boards; RTP 0.5136737 cross-checked with Excel Scatter!F7
-    assert all_wins.sum() == 624_113_505
+    # total points over all 30^5 boards; base RTP 0.6925627 (paytable v2, cross-checked with Excel Scatter!F7)
+    assert all_wins.sum() == 841_463_640
 
 
 def test_window_counts_wraps_around(game):
@@ -118,3 +128,21 @@ def test_simulation_matches_theory(game):
     x = simulate_spins(config, n, seed=2026) / config["bet"]
     rtp, _, sd = total_moments(config)
     assert abs(x.mean() - rtp) < 4 * sd / np.sqrt(n)
+
+
+def test_scatter_pays_split_off_line_win(game):
+    # board [0, 4, 7, 4, 3] has 5 S and no line win: whole 2500 is scatter pay
+    config, _, _ = game
+    assert all_board_scatter_pays(config)[0, 4, 7, 4, 3] == 2500
+    assert (all_board_wins(config) >= all_board_scatter_pays(config)).all()
+
+
+def test_simulate_detailed_parts_are_consistent(game):
+    # parts must add up: line <= base <= total; free-game win only where triggered;
+    # simulate_spins must give exactly the same totals (same random stream)
+    config, _, _ = game
+    d = simulate_detailed(config, 100_000, seed=7)
+    assert (d["line"] <= d["base"]).all()
+    assert (d["base"] <= d["total"]).all()
+    assert (d["total"][d["awards"] == 0] == d["base"][d["awards"] == 0]).all()
+    assert (simulate_spins(config, 100_000, seed=7) == d["total"]).all()
