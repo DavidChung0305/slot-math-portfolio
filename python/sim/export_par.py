@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]       # slot-math-portfolio/
 CONFIG = ROOT / "config" / "game.json"
 OUT = ROOT / "excel" / "data"
 
-N = 1_000_000
+N = 10_000_000
 SEED = 2026
 EDGES = [0, 1, 5, 20, 100]
 Z95 = 1.96
